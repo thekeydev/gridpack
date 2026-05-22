@@ -22,9 +22,9 @@ let MiniBox = ({ c = 0, children }) =>
 let showcases = [
 	{ layout: "hscf hhh scc sff 8", label: "Page Layout", h: 180,
 		children: ["Header", "Sidebar", "Content", "Footer"] },
-	{ layout: "aB | 200", label: "Sidebar + Main", h: 120,
+	{ layout: "aB | 120", label: "Sidebar + Main", h: 120,
 		children: ["Sidebar", "Main"] },
-	{ layout: "hnsCaf hhh nss nca fff 4 | 60#200", label: "Dashboard", h: 200,
+	{ layout: "hnsCaf hhh nss nca fff 4 | 60 # 120", label: "Dashboard", h: 200,
 		children: ["Header", "Nav", "Stats", "Content", "Aside", "Footer"] },
 	{ layout: "a(eS)B ab* 8 | 100", label: "Form", h: 160,
 		children: ["Label 1", "Input 1", "Label Foo", "Input 2", "Label Bar42", "Input 3"] },
@@ -227,6 +227,7 @@ let LandingPage = ({ onNavigate }) => {
 				font-family: var(--font-mono); font-size: 13px; font-weight: 600;
 				padding: 12px 28px; border-radius: 6px; cursor: pointer;
 				transition: all 0.2s; border: none; text-decoration: none;
+				white-space: nowrap;
 			}
 			.gp-btn-primary {
 				background: #7fdbca; color: #0c0c1a;
@@ -343,7 +344,7 @@ let LandingPage = ({ onNavigate }) => {
 		<div className="gp-section">
 			<h2 className="gp-h2">Before & <em>After</em></h2>
 			<div style={{ height: 24 }} />
-			<Grid layout="ab ab 16 | ##" sm="| ab ab 16 | #">
+			<Grid layout="* 16 ?w" xs="| 16 ?w | .." sm="* 16 ?w">
 				<div>
 					<div className="gp-compare-label">Traditional CSS Grid</div>
 					<Code label="styles.css">{`.layout {\n  display: grid;\n  grid-template-areas:\n    "header header header"\n    "sidebar content content"\n    "sidebar footer footer";\n  grid-template-columns: 200px 1fr 1fr;\n  grid-template-rows: auto 1fr auto;\n  gap: 8px;\n}\n.header  { grid-area: header; }\n.sidebar { grid-area: sidebar; }\n.content { grid-area: content; }\n.footer  { grid-area: footer; }`}{"\n"}<span className="cm">{"// + elements or components"}</span></Code>
@@ -361,20 +362,20 @@ let LandingPage = ({ onNavigate }) => {
 		<div className="gp-section">
 			<h2 className="gp-h2">12 tokens. <em>Lots of layouts.</em></h2>
 			<p className="gp-sub" style={{ marginBottom: 32 }}>The entire vocabulary fits on a sticky note.</p>
-			<Grid layout="*5 8 ?w" sm="*3 8 ?w" style={{ maxWidth: 800 }}>
+			<Grid layout="*3 8 ?w" sm="*4 8 ?w" style={{ maxWidth: 800 }}>
 				{[
 					["a-z", "areas", "#7fdbca"],
 					["A-Z", "grow", "#c792ea"],
-					[".", "empty / auto", "#888"],
-					["#", "1fr", "#c3e88d"],
+					["s3c6", "char-count / spans", "#7fdbca"],
 					["|", "pipe / transpose", "#c792ea"],
+					["?", "flags (whfF + secbag)", "#f78c6c"],
+					["( )", "align", "#c3e88d"],
+					[".", "empty / auto", "#fff"],
+					["#", "1fr", "#c3e88d"],
 					["~", "minmax", "#f78c6c"],
 					["*", "auto-flow / repeat", "#ff5370"],
-					["?", "flags (whfF + secbag)", "#f78c6c"],
-					["( )", "align", "#82aaff"],
+					["[ ]", "overlap", "#82aaff"],
 					["{ }", "vars", "#ffcb6b"],
-					["h12", "char-count", "#7fdbca"],
-					["*s3c6", "span pattern", "#c3e88d"],
 				].map(([tok, desc, color], i) =>
 					<div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 0" }}>
 						<span className="gp-mono" style={{ color, fontSize: 18, fontWeight: 700, width: 48, textAlign: "center" }}>{tok}</span>
@@ -390,7 +391,7 @@ let LandingPage = ({ onNavigate }) => {
 		<div className="gp-section">
 			<h2 className="gp-h2">Features</h2>
 			<div style={{ height: 24 }} />
-			<Grid md="*3 16 ?w" layout="*2 16 ?w">
+			<Grid layout="*1 16 ?w" sm="*2 16 ?w" md="*3 16 ?w" >
 				<FeatureCard icon="⊞" title="ASCII Grid Maps"
 					desc="Draw your layout as a character map. Areas, spans, and empty cells — all visible at a glance."
 					code="hscf hhh scc sff" />
@@ -398,7 +399,7 @@ let LandingPage = ({ onNavigate }) => {
 					desc="Repeat area chars for proportional columns. ab abb = 1:2 ratio. No math needed."
 					code="ab abb" />
 				<FeatureCard icon="⇅" title="Transpose"
-				desc="Leading pipe swaps axes — sizes, gaps, alignment all follow. Vertical stack is one char away."
+					desc="Leading pipe swaps axes — sizes, gaps, alignment all follow. Vertical stack is one char away."
 					code="|abc" />
 				<FeatureCard icon="⊟" title="Auto-Flow"
 					desc="Just say how many columns. Rows derived from children. Reverse flow with ?f, dense packing with ?F."
@@ -463,8 +464,8 @@ let LandingPage = ({ onNavigate }) => {
 					<MiniBox>Content</MiniBox>
 					<MiniBox>Footer</MiniBox>
 				</Grid>
-				<Code label="with extensions"><span className="kw">import</span> {"{ Grid, splitPane }"} <span className="kw">from</span> <span className="str">"gridpack"</span>{"\n\n"}<span className="kw">let</span> [v, setV] = <span className="fn">useState</span>({"{ w: 200 }"});{"\n\n"}<span className="tag">{"<Grid"}</span>{"\n  "}<span className="attr">layout</span>=<span className="str">{'"sC | {w}"'}</span>{"\n  "}<span className="attr">vars</span>={"{v}"} <span className="attr">onVarsChange</span>={"{setV}"}{"\n  "}<span className="attr">extensions</span>={"{[splitPane({ var: \"w\", edge: \"s:e\" })]}"}{"\n"}<span className="tag">{">"}</span>{"\n  "}<span className="tag">{"<Sidebar />"}</span>{"\n  "}<span className="tag">{"<Content />"}</span>{"\n"}<span className="tag">{"</Grid>"}</span></Code>
-				<Grid layout="sC | {w}" vars={v} onVarsChange={setV} extensions={[splitPane({ var: "w", edge: "s:e" })]}>
+				<Code label="with extensions"><span className="kw">import</span> {"{ Grid, splitPane }"} <span className="kw">from</span> <span className="str">"gridpack"</span>{"\n\n"}<span className="kw">let</span> [v, setV] = <span className="fn">useState</span>({"{ w: 200 }"});{"\n\n"}<span className="tag">{"<Grid"}</span>{"\n  "}<span className="attr">layout</span>=<span className="str">{'"sC | {w}"'}</span>{"\n  "}<span className="attr">vars</span>={"{v}"} <span className="attr">onVarsChange</span>={"{setV}"}{"\n  "}<span className="attr">extensions</span>={"{[splitPane({ var: \"w\", edge: \"s:r\" })]}"}{"\n"}<span className="tag">{">"}</span>{"\n  "}<span className="tag">{"<Sidebar />"}</span>{"\n  "}<span className="tag">{"<Content />"}</span>{"\n"}<span className="tag">{"</Grid>"}</span></Code>
+				<Grid layout="sC | {w}" vars={v} onVarsChange={setV} extensions={[splitPane({ var: "w", edge: "s:r" })]}>
 					<MiniBox>Sidebar</MiniBox>
 					<MiniBox>Content</MiniBox>
 				</Grid>

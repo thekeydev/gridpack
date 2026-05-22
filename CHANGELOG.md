@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.2.4
+
+### Overlap Layouts
+
+Three new syntaxes for overlapping grid areas — layouts where children share cells, like a photo overlapping a card or a background image behind a content panel. All three compile to explicit `grid-column`/`grid-row` placement and coexist with normal template-areas layouts.
+
+- **`[]` bracket cells** — mark overlap directly in the map. `[iq]` in a cell means both `i` and `q` occupy that position. The parser computes each area's bounding rectangle, converts it to line-based placement, and removes the area from the template-areas map. Non-rectangular overlap areas are detected and produce errors.
+- **`+` layer syntax** — split the layout into separate maps with `+`. Each layer is padded to the maximum dimensions (missing columns/rows become `.`), then layers are overlaid. Where two layers place an area in the same cell, a `[xy]` bracket cell is auto-generated. Supports any number of layers.
+- **`[col,row]` line placement** — explicit CSS grid line numbers as an escape hatch. `i[1:3,1:3]` sets `grid-column: 1 / 3; grid-row: 1 / 3`. Supports negative lines (`1:-1`), z-index as third param (`i[1:3,1:3,10]`), and alignment modifiers (`i(cC)[1:3,1:3]`). Can appear anywhere in the layout string — legend, map rows, or standalone. Pure placement layouts (no map at all) infer grid dimensions from the highest line numbers.
+- 4 playground presets in the new "Overlap" category: Testimonial Card (`[]` cells), Testimonial Card (`+` layers), Callout Card (three-layer `+`), Line Placement (`[col,row]`).
+
+### More
+
+- Responsive landing page + playground
+- Test suite: 250 tests covering the full DSL surface including the new overlap syntaxes.
+- **Whitespace normalization** — newlines, carriage returns, and tabs are now treated as segment separators alongside spaces and commas. Layout strings can be written as multi-line template literals.
+
 ## 0.2.3
 
 ### Masonry Extension

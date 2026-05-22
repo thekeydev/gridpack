@@ -8,7 +8,7 @@ let tokenizeSizes = (s) => {
 	let flush = () => { if (buf) { tokens.push(buf); buf = ""; } };
 	for (let i = 0; i < s.length; i++) {
 		let ch = s[i];
-		if (ch === " " || ch === "\t") flush();
+		if (ch === " " || ch === "\t" || ch === "\n" || ch === "\r") flush();
 		else if (ch === "~") buf += ch;
 		else if (ch === "*") { flush(); tokens.push("*"); }
 		else if (ch === "." || ch === "#") {
@@ -120,7 +120,7 @@ let parseLegend = (legend) => {
 	return { areas, growAreas, areaAlign };
 };
 
-// --- expand char-count shorthand: h12 ? hhhhhhhhhhhh, s3 ? sss, a2b ? aab ---
+// --- expand char-count shorthand: h12 -> hhhhhhhhhhhh, s3 -> sss, a2b -> aab ---
 let expandCharCounts = (s) => {
 	let result = "";
 	let i = 0;
@@ -139,7 +139,252 @@ let expandCharCounts = (s) => {
 	return result;
 };
 
-// --- parse auto-flow span pattern: *s3c6a3 ? { colCount: 12, spans: [{area:"s",span:3},{area:"c",span:6},{area:"a",span:3}] } ---
+// --- parse placement override: letter[col,row] or letter[col,row,z] ---
+// also handles letter(mods)[col,row] where mods are alignment modifiers
+// returns { area, col, row, z, grow, align } or null if not a placement token
+let parsePlacementToken = (token) => {
+	let m = token.match(/^([a-zA-Z])(?:\(([^)]*)\))?\[([^\]]+)\]$/);
+	if (!m) return null;
+	let area = m[1].toLowerCase();
+	let grow = m[1] !== m[1].toLowerCase();
+	let mods = m[2] || null;
+	let parts = m[3].split(",");
+	if (parts.length < 2 || parts.length > 3) return null;
+	let col = parts[0].trim();
+	let row = parts[1].trim();
+	let z = parts.length === 3 ? parts[2].trim() : null;
+	let toCSS = s => {
+		if (s.includes(":")) return s.split(":").join(" / ");
+		return s;
+	};
+	// parse alignment modifiers
+	let align = null;
+	if (mods) {
+		let justifySelf = null, alignSelf = null;
+		for (let ch of mods) {
+			if (SelfJMap[ch]) justifySelf = SelfJMap[ch];
+			else if (SelfAMap[ch]) alignSelf = SelfAMap[ch];
+		}
+		if (justifySelf || alignSelf) align = { justifySelf, alignSelf };
+	}
+	return { area, grow, col: toCSS(col), row: toCSS(row), z: z != null ? parseInt(z) : null, align };
+};
+
+// --- extract placement overrides from segments ---
+// scans all segments for letter[...] or letter(...)[...] tokens, removes them, returns { cleaned, overrides }
+let extractPlacements = (segments) => {
+	let overrides = {};
+	let cleaned = [];
+	for (let seg of segments) {
+		let remaining = "";
+		let i = 0;
+		while (i < seg.length) {
+			// check for letter[ or letter(...)[ at current position
+			if (/[a-zA-Z]/.test(seg[i])) {
+				let j = i + 1;
+				// skip optional (...) alignment group
+				if (j < seg.length && seg[j] === "(") {
+					let close = seg.indexOf(")", j + 1);
+					if (close !== -1) j = close + 1;
+				}
+				// now check for [
+				if (j < seg.length && seg[j] === "[") {
+					let close = seg.indexOf("]", j + 1);
+					if (close !== -1) {
+						let token = seg.substring(i, close + 1);
+						let parsed = parsePlacementToken(token);
+						if (parsed) {
+							overrides[parsed.area] = parsed;
+							i = close + 1;
+							continue;
+						}
+					}
+				}
+			}
+			remaining += seg[i];
+			i++;
+		}
+		if (remaining) cleaned.push(remaining);
+	}
+	return { cleaned, overrides };
+};
+
+// --- + layer merging: split segments on "+", pad layers, overlay into [] cells ---
+// each layer is a set of map-row segments (no legend — legend is shared from first layer or separate)
+// returns merged map rows with [xy] cells where layers overlap
+let mergeLayers = (mapRows) => {
+	// split into layers on "+"
+	let layers = [], current = [];
+	for (let row of mapRows) {
+		if (row === "+") {
+			if (current.length > 0) layers.push(current);
+			current = [];
+		} else current.push(row);
+	}
+	if (current.length > 0) layers.push(current);
+	if (layers.length <= 1) return mapRows.filter(r => r !== "+"); // no + found
+
+	// expand char-counts and parse each layer into a 2D char grid
+	let grids = layers.map(layer => {
+		let rows = layer.map(r => {
+			let suffix = r.endsWith("*") ? "*" : "";
+			let body = suffix ? r.slice(0, -1) : r;
+			return expandCharCounts(body) + suffix;
+		});
+		// parse rows into cell arrays, handling [xy] cells as multi-char tokens
+		return rows.map(parseMapRowCells);
+	});
+
+	// find max dimensions
+	let maxCols = 0, maxRows = 0;
+	for (let grid of grids) {
+		if (grid.length > maxRows) maxRows = grid.length;
+		for (let row of grid) if (row.length > maxCols) maxCols = row.length;
+	}
+
+	// pad each grid to maxCols × maxRows with "." cells
+	for (let grid of grids) {
+		while (grid.length < maxRows) grid.push([]);
+		for (let row of grid) while (row.length < maxCols) row.push(".");
+	}
+
+	// overlay: stack layers, collect area names per cell
+	let merged = [];
+	for (let r = 0; r < maxRows; r++) {
+		let row = [];
+		for (let c = 0; c < maxCols; c++) {
+			let names = new Set();
+			for (let grid of grids) {
+				let cell = grid[r][c];
+				if (cell === ".") continue;
+				// cell could be a single char or already a [xy] group
+				if (cell.startsWith("[") && cell.endsWith("]")) {
+					for (let ch of cell.slice(1, -1)) if (ch !== ".") names.add(ch);
+				} else {
+					for (let ch of cell) if (ch !== ".") names.add(ch);
+				}
+			}
+			if (names.size === 0) row.push(".");
+			else if (names.size === 1) row.push([...names][0]);
+			else row.push("[" + [...names].join("") + "]");
+		}
+		merged.push(row);
+	}
+
+	// serialize back to strings — cells are single chars or [xy] groups
+	return merged.map(row => row.join(""));
+};
+
+// --- parse a map row string into cell tokens, handling [xy] bracket groups ---
+// "i[iq]q" -> ["i", "[iq]", "q"]
+// "ab.c" -> ["a", "b", ".", "c"]
+let parseMapRowCells = (row) => {
+	let cells = [], i = 0;
+	while (i < row.length) {
+		if (row[i] === "[") {
+			let close = row.indexOf("]", i + 1);
+			if (close !== -1) {
+				cells.push(row.substring(i, close + 1));
+				i = close + 1;
+			} else { cells.push(row[i]); i++; }
+		} else { cells.push(row[i]); i++; }
+	}
+	return cells;
+};
+
+// --- resolve [] bracket cells in map rows -> placement overrides ---
+// scans parsed map cells for [xy] groups, determines bounding rects for each overlapping area,
+// converts to placementOverrides, and replaces those areas with "." in the map
+// returns { cleanedRows: string[], overrides: {}, overlapAreas: Set }
+let resolveBracketCells = (mapRows) => {
+	// parse all rows into cell arrays
+	let grid = mapRows.map(parseMapRowCells);
+	let maxCols = Math.max(...grid.map(r => r.length));
+	// pad to uniform width
+	for (let row of grid) while (row.length < maxCols) row.push(".");
+
+	// find all areas that appear in any [] cell
+	let overlapAreas = new Set();
+	for (let r = 0; r < grid.length; r++) {
+		for (let c = 0; c < grid[r].length; c++) {
+			let cell = grid[r][c];
+			if (cell.startsWith("[") && cell.endsWith("]")) {
+				for (let ch of cell.slice(1, -1)) if (ch !== ".") overlapAreas.add(ch.toLowerCase());
+			}
+		}
+	}
+
+	if (overlapAreas.size === 0) return { cleanedRows: mapRows, overrides: {}, overlapAreas };
+
+	// build bounding rect for each overlap area across ALL cells (normal + bracket)
+	let bounds = {}; // area -> { minR, maxR, minC, maxC }
+	for (let r = 0; r < grid.length; r++) {
+		for (let c = 0; c < grid[r].length; c++) {
+			let cell = grid[r][c];
+			let chars = cell.startsWith("[") && cell.endsWith("]")
+				? [...cell.slice(1, -1)]
+				: [cell];
+			for (let ch of chars) {
+				let lower = ch.toLowerCase();
+				if (ch === "." || !overlapAreas.has(lower)) continue;
+				if (!bounds[lower]) bounds[lower] = { minR: r, maxR: r, minC: c, maxC: c };
+				else {
+					if (r < bounds[lower].minR) bounds[lower].minR = r;
+					if (r > bounds[lower].maxR) bounds[lower].maxR = r;
+					if (c < bounds[lower].minC) bounds[lower].minC = c;
+					if (c > bounds[lower].maxC) bounds[lower].maxC = c;
+				}
+			}
+		}
+	}
+
+	// validate rectangularity for overlap areas
+	for (let [area, b] of Object.entries(bounds)) {
+		for (let r = b.minR; r <= b.maxR; r++) {
+			for (let c = b.minC; c <= b.maxC; c++) {
+				let cell = grid[r][c];
+				let chars = cell.startsWith("[") && cell.endsWith("]")
+					? [...cell.slice(1, -1)].map(ch => ch.toLowerCase())
+					: [cell.toLowerCase()];
+				if (!chars.includes(area) && !chars.includes("."))
+					return { error: `overlap area "${area}" not rectangular (row ${r + 1}, col ${c + 1})` };
+				// "." inside bounding rect is ok — it's a gap that the area spans over
+			}
+		}
+	}
+
+	// convert bounds to placement overrides (1-based CSS grid lines)
+	let overrides = {};
+	for (let [area, b] of Object.entries(bounds)) {
+		overrides[area] = {
+			area,
+			grow: false, // will be updated from legend later
+			col: `${b.minC + 1} / ${b.maxC + 2}`,
+			row: `${b.minR + 1} / ${b.maxR + 2}`,
+			z: null,
+			align: null,
+		};
+	}
+
+	// clean the map: remove overlap areas from all cells
+	let cleanedGrid = grid.map(row =>
+		row.map(cell => {
+			if (cell.startsWith("[") && cell.endsWith("]")) {
+				let remaining = [...cell.slice(1, -1)].filter(ch => !overlapAreas.has(ch.toLowerCase()));
+				if (remaining.length === 0) return ".";
+				if (remaining.length === 1) return remaining[0];
+				return "[" + remaining.join("") + "]"; // still overlapping after removal
+			}
+			if (overlapAreas.has(cell.toLowerCase())) return ".";
+			return cell;
+		})
+	);
+
+	let cleanedRows = cleanedGrid.map(row => row.join(""));
+	return { cleanedRows, overrides, overlapAreas };
+};
+
+// --- parse auto-flow span pattern: *s3c6a3 -> { colCount: 12, spans: [{area:"s",span:3},{area:"c",span:6},{area:"a",span:3}] } ---
 let parseAutoFlowPattern = (pat) => {
 	// pat is everything after the leading * e.g. "s3c6a3" or "w2*2" or "12" or ""
 	let spans = [];
@@ -199,12 +444,12 @@ let parseGridLayout = (input, childCount) => {
 	let colRepeat = colParsed.repeat || null, rowRepeat = rowParsed.repeat || null;
 	let colRepeatSizes = colParsed.sizes || null, rowRepeatSizes = rowParsed.sizes || null;
 
-	// tokenize main part, preserving parenthesized groups
+	// tokenize main part, preserving parenthesized and bracketed groups
 	let segments = [], buf = "", depth = 0;
 	for (let ch of mainPart) {
-		if (ch === "(") { depth++; buf += ch; }
-		else if (ch === ")") { depth--; buf += ch; }
-		else if (depth === 0 && (ch === " " || ch === "\t" || ch === ",")) {
+		if (ch === "(" || ch === "[") { depth++; buf += ch; }
+		else if (ch === ")" || ch === "]") { depth--; buf += ch; }
+		else if (depth === 0 && (ch === " " || ch === "\t" || ch === "\n" || ch === "\r" || ch === ",")) {
 			if (buf) { segments.push(buf); buf = ""; }
 		} else buf += ch;
 	}
@@ -226,12 +471,50 @@ let parseGridLayout = (input, childCount) => {
 	}
 	segments = remaining;
 
+	// extract placement overrides: letter[col,row] or letter[col,row,z]
+	let { cleaned: cleanedSegs, overrides: placementOverrides } = extractPlacements(segments);
+	segments = cleanedSegs;
+
 	// all-numeric = gap only, prepend *
 	if (segments.length > 0 && segments.every(s => /^\d+(\.\d+)?$/.test(s))) {
 		if (childCount > 0) segments.unshift("*");
 		else return { error: "gap without layout" };
 	}
 	if (segments.length < 1) {
+		// check if we have placement overrides — pure placement layout
+		let poKeys = Object.keys(placementOverrides);
+		if (poKeys.length > 0) {
+			// derive grid dimensions from max line numbers in placements
+			let maxCol = 0, maxRow = 0;
+			for (let po of Object.values(placementOverrides)) {
+				let colNums = po.col.split("/").map(s => parseInt(s.trim())).filter(n => n > 0);
+				let rowNums = po.row.split("/").map(s => parseInt(s.trim())).filter(n => n > 0);
+				for (let n of colNums) if (n > maxCol) maxCol = n;
+				for (let n of rowNums) if (n > maxRow) maxRow = n;
+			}
+			// line N means N-1 tracks
+			let colCount = Math.max(1, maxCol - 1);
+			let rowCount = Math.max(1, maxRow - 1);
+			let areas = poKeys;
+			let growAreas = poKeys.filter(k => placementOverrides[k].grow);
+			let areaAlign = {};
+			for (let [name, po] of Object.entries(placementOverrides)) {
+				if (po.align) areaAlign[name] = po.align;
+			}
+			let colDefault = "1fr", rowDefault = "1fr";
+			let colSizeList = fillSizes(colSizes, colCount, colDefault);
+			let rowSizeList = fillSizes(rowSizes, rowCount, rowDefault);
+			return {
+				areas, growAreas, areaAlign,
+				templateAreas: null,
+				colSizes: colSizeList, rowSizes: rowSizeList,
+				colCount, rowCount,
+				gapH: null, gapV: null, transpose, expanded: false, flags,
+				explicitSizes: { cols: !!colSizes, rows: !!rowSizes },
+				colRepeat: null, rowRepeat: null, colRepeatSizes: null, rowRepeatSizes: null,
+				placementOverrides,
+			};
+		}
 		if (childCount > 0) segments = ["*"];
 		else return { error: "need at least a legend or *" };
 	}
@@ -295,6 +578,7 @@ let parseGridLayout = (input, childCount) => {
 				gapH: localGapH, gapV: localGapV, transpose, expanded: true, flags,
 				autoFlow: colNum,
 				colRepeat, rowRepeat, colRepeatSizes, rowRepeatSizes,
+				placementOverrides,
 			};
 		}
 
@@ -348,6 +632,7 @@ let parseGridLayout = (input, childCount) => {
 			gapH: localGapH, gapV: localGapV, transpose, expanded: true, flags,
 			autoFlow: colNum, childSpans,
 			colRepeat, rowRepeat, colRepeatSizes, rowRepeatSizes,
+			placementOverrides,
 		};
 	}
 
@@ -441,6 +726,7 @@ let parseGridLayout = (input, childCount) => {
 			gapH: localGapH, gapV: localGapV, transpose, expanded: true, flags,
 			autoFlow: colNum, childSpans: allSpans,
 			colRepeat, rowRepeat, colRepeatSizes, rowRepeatSizes,
+			placementOverrides,
 		};
 	}
 
@@ -454,6 +740,15 @@ let parseGridLayout = (input, childCount) => {
 	let legendResult = parseLegend(segments[0]);
 	if (legendResult.error) return legendResult;
 	let { areas, growAreas, areaAlign } = legendResult;
+
+	// inject placement-only areas that aren't already in the legend
+	for (let [name, po] of Object.entries(placementOverrides)) {
+		if (!areas.includes(name)) {
+			areas.push(name);
+			if (po.grow) growAreas.add(name);
+		}
+		if (po.align) areaAlign[name] = po.align;
+	}
 
 	// extract trailing gap(s)
 	let gapH = null, gapV = null, endIdx = segments.length;
@@ -472,13 +767,33 @@ let parseGridLayout = (input, childCount) => {
 	let mapRows = segments.slice(1, endIdx);
 	if (mapRows.length == 0) mapRows = [areas.join("")];
 
-	// expand char-counts in map rows: s3 ? sss, h12 ? hhhhhhhhhhhh
+	// expand char-counts in map rows: s3 -> sss, h12 -> hhhhhhhhhhhh
 	mapRows = mapRows.map(row => {
 		// preserve trailing * for repeat detection
 		let suffix = row.endsWith("*") ? "*" : "";
 		let body = suffix ? row.slice(0, -1) : row;
 		return expandCharCounts(body) + suffix;
 	});
+
+	// --- + layer merging: split on "+", pad, overlay into [] cells ---
+	if (mapRows.includes("+"))
+		mapRows = mergeLayers(mapRows);
+
+	// --- [] bracket cell resolution: convert overlap cells to placement overrides ---
+	if (mapRows.some(r => r.includes("["))) {
+		let resolved = resolveBracketCells(mapRows);
+		if (resolved.error) return resolved;
+		mapRows = resolved.cleanedRows;
+		// merge bracket-derived overrides into placementOverrides
+		for (let [name, po] of Object.entries(resolved.overrides)) {
+			if (growAreas.has(name)) po.grow = true;
+			placementOverrides[name] = { ...po, ...(placementOverrides[name] || {}) };
+		}
+		// ensure overlap areas are in the areas list
+		for (let name of resolved.overlapAreas) {
+			if (!areas.includes(name)) areas.push(name);
+		}
+	}
 
 	// --- detect repeat row (ends with *) ---
 	let repeatIdx = -1;
@@ -630,6 +945,7 @@ let parseGridLayout = (input, childCount) => {
 			explicitSizes: { cols: ec, rows: er },
 			repeatInfo: { pattern: repeatAreaList, pinned: [...pinnedAreas], count: repeatCount, staticAreas },
 			colRepeat: null, rowRepeat: null, colRepeatSizes: null, rowRepeatSizes: null,
+			placementOverrides,
 		};
 	}
 
@@ -675,7 +991,7 @@ let parseGridLayout = (input, childCount) => {
 
 	let proportional = false;
 	if (!colSizes) {
-		// if any area repeats in this column's row, treat as proportional ? 1fr
+		// if any area repeats in this column's row, treat as proportional -> 1fr
 		for (let row of mapRows) {
 			// check if this char appears more than once in any row (proportional)
 			if (row.match(/([a-z])\1/))
@@ -685,7 +1001,7 @@ let parseGridLayout = (input, childCount) => {
 	let colSizeList = colSizes
 		? fillSizes(colSizes, colCount, proportional ? "1fr" : "auto")
 		: Array.from({ length: colCount }, (_, c) => {
-			// if any area repeats in this column's row, treat as proportional ? 1fr
+			// if any area repeats in this column's row, treat as proportional -> 1fr
 			for (let row of mapRows) {
 				if (growAreas.has(row[c])) return "1fr";
 			}
@@ -731,6 +1047,7 @@ let parseGridLayout = (input, childCount) => {
 		gapH, gapV, transpose, expanded, flags,
 		explicitSizes: { cols: ec, rows: er },
 		colRepeat: null, rowRepeat: null, colRepeatSizes: null, rowRepeatSizes: null,
+		placementOverrides,
 	};
 };
 
@@ -744,8 +1061,8 @@ let toGridStyle = (parsed) => {
 	let explicitFrCols = es.cols && parsed.colSizes.some(s => s.includes("fr"));
 	let explicitFrRows = es.rows && parsed.rowSizes.some(s => s.includes("fr"));
 	// grow areas generate 1fr tracks — those need container size to distribute into
-	let growFrCols = parsed.colSizes.some(s => s.includes("fr")) && parsed.growAreas.length > 0;
-	let growFrRows = parsed.rowSizes.some(s => s.includes("fr")) && parsed.growAreas.length > 0;
+	let growFrCols = /*parsed.colSizes.some(s => s.includes("fr")) &&*/ parsed.growAreas.length > 0;
+	let growFrRows = /*parsed.rowSizes.some(s => s.includes("fr")) &&*/ parsed.growAreas.length > 0;
 
 	let style = { display: "grid" };
 
@@ -788,8 +1105,14 @@ let toGridStyle = (parsed) => {
 // --- helper: get style for a specific area ---
 let toAreaStyle = (parsed, areaName, childIdx) => {
 	let style = {};
+	let po = parsed.placementOverrides && parsed.placementOverrides[areaName];
 
-	if (parsed.templateAreas) {
+	if (po) {
+		// explicit line-based placement — overrides grid-area
+		style.gridColumn = po.col;
+		style.gridRow = po.row;
+		if (po.z != null) style.zIndex = po.z;
+	} else if (parsed.templateAreas) {
 		// area-based mode
 		style.gridArea = areaName;
 	} else if (parsed.childSpans && childIdx != null && childIdx < parsed.childSpans.length) {

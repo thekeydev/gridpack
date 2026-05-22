@@ -82,8 +82,8 @@ let presets = [
 		guide: "**Template variables** let you inject dynamic values into the layout string. `{w}` is replaced with the value from the `vars` prop before parsing.\n\nThis is the foundation that all extensions build on — they read and write variables to control layout interactively.",
 		tryThis: ["Drag the slider to resize", "The layout string stays the same — only the variable changes"] },
 	{ cat: "Layouts", name: "Dashboard (sneak👀)", layout: "hnsCaf hhh nss nca fff 8 | {nav}#{aside} | 40 40#{footer}", w: 600, h: 350,
-		vars: { nav: 180, aside: 100, footer: 80 },
-		ext: () => [splitPane({ var: "nav", edge: "n:e", min: 50, max: 300 }), splitPane({ var: "aside", edge: "a:s", min: 50, max: 300 }), splitPane({ var: "footer", edge: "f:s", axis: "y", min: 50, max: 300 })],
+		vars: { nav: 100, aside: 100, footer: 80 },
+		ext: () => [splitPane({ var: "nav", edge: "n:r", min: 50, max: 300 }), splitPane({ var: "aside", edge: "a:L", min: 50, max: 300 }), splitPane({ var: "footer", edge: "f:T", axis: "y", min: 50, max: 300 })],
 		children: () => boxes(["Header", "Nav", "Stats", "Content", "Aside", "Footer"]),
 		info: "Drag edges to resize",
 		src: '<Grid layout="hnsCaf hhh nss nca fff 8 | {nav}#{aside} | 40 40#{footer}"\n\tvars={v} onVarsChange={setV}\n\textensions={[\n\t\tsplitPane({ var: "nav", edge: "n:e" }),\n\t\tsplitPane({ var: "aside", edge: "a:s" }),\n\t\tsplitPane({ var: "footer", edge: "f:s", axis: "y" }),\n\t]}>\n\t...\n</Grid>',
@@ -112,15 +112,15 @@ let presets = [
 		tryThis: ["Try `a(cC)b(cC)c(cC)` to center everything", "Try `a(sS)b(eE)c(cC) acb ?wh` for diagonal", "Try `a(sS)b(eE)c(cC) acab ?wh` for fun"] },
 
 	// --- minmax ---
-	{ cat: "Sizing", name: "Some Layout", layout: "hnMsf hhhh nnnn ssmm ffff 12 6 | 100## 300 | 48 48#40", w: 550, h: 300,
+	{ cat: "Sizing", name: "Faked Minmax", layout: "hnMsf hhhh nnnn ssmm ffff 12 6 | 100## 200 | 48 48#40", w: 550, h: 300,
 		children: () => boxes(["Header", "Nav", "Main", "Sidebar", "Footer"]),
 		src: '<Grid layout="hnMsf hhhh nnnn ssmm ffff 12 6 | 100## 300 | 48 48#40">\n\t...\n</Grid>',
-		guide: "A more complex layout showing explicit sizing on both axes. Column sizes `100## 300` = 100px, 1fr, 1fr, 300px. Row sizes `48 48#40` = 48px, 48px, 1fr, 40px. The gap is `12 6` (12px row gap, 6px col gap).",
+		guide: "A more complex layout showing explicit sizing on both axes. Column sizes `100## 200` = 100px, 1fr, 1fr, 200px. Row sizes `48 48#40` = 48px, 48px, 1fr, 40px. The gap is `12 6` (12px row gap, 6px col gap).",
 		tryThis: ["Change col sizes: `| 200# 200`", "Change row gap: try `8 8`"] },
-	{ cat: "Sizing", name: "Minmax Sidebar", layout: "sc 8 ?w | 100~300 #", w: 500, h: 200,
+	{ cat: "Sizing", name: "Minmax Sidebar", layout: "sc 8 ?w | 100~200 #", w: 500, h: 200,
 		children: () => boxes(["Sidebar", "Content"]), info: "Resize container — sidebar clamps",
 		src: '<Grid layout="sc 8 ?w | 100~300 #">\n\t<Sidebar/>\n\t<Content/>\n</Grid>',
-		guide: "The **tilde** `~` creates a `minmax()` size. `100~300` becomes `minmax(100px, 300px)`. The sidebar will never be smaller than 100px or larger than 300px, even as the container resizes.\n\nYou can mix any size types: `100~#` = minmax(100px, 1fr), `.~300` = minmax(auto, 300px).",
+		guide: "The **tilde** `~` creates a `minmax()` size. `100~200` becomes `minmax(100px, 200px)`. The sidebar will never be smaller than 100px or larger than 300px, even as the container resizes.\n\nYou can mix any size types: `100~#` = minmax(100px, 1fr), `.~300` = minmax(auto, 300px).",
 		tryThis: ["Resize the dashed container border to see clamping", "Try `200~400` for a wider range", "Try `100~# #` — sidebar grows with 1fr max"] },
 	{ cat: "Sizing", name: "Minmax Responsive", layout: "abc | 100~# 100~# 100~#", w: 500, h: 150,
 		children: () => boxes(["A", "B", "C"]), info: "Resize container — cols min width",
@@ -211,9 +211,9 @@ let presets = [
 
 	// --- extensions ---
 	{ cat: "Extensions", name: "Split Pane", layout: "sC | {w}#", w: 500, h: 280, vars: { w: 200 },
-		ext: () => [splitPane({ var: "w", edge: "s:e", min: 80, max: 400 })],
+		ext: () => [splitPane({ var: "w", edge: "s:r", min: 80, max: 400 })],
 		children: () => boxes(["Sidebar", "Content"]), info: "Drag the edge",
-		src: '<Grid layout="sC | {w}#"\n\tvars={v} onVarsChange={setV}\n\textensions={[\n\t\tsplitPane({ var: "w", edge: "s:e",\n\t\t\tmin: 80, max: 400 })\n\t]}\n>\n\t<Sidebar/>\n\t<Content/>\n</Grid>',
+		src: '<Grid layout="sC | {w}#"\n\tvars={v} onVarsChange={setV}\n\textensions={[\n\t\tsplitPane({ var: "w", edge: "s:r",\n\t\t\tmin: 80, max: 400 })\n\t]}\n>\n\t<Sidebar/>\n\t<Content/>\n</Grid>',
 		guide: "Extensions add **behavior** to layouts. They're composable — stack them in an array.\n\n`splitPane` creates a draggable handle. It writes back to the `{w}` variable, the layout re-renders, and the grid updates. The `edge` syntax `s:e` means \"right edge of area s.\"\n\nThis is the pattern all extensions follow: inject behavior without changing how you write layouts.",
 		tryThis: ["Drag the edge between sidebar and content", "Min/max constraints are built in (80-400px here)"] },
 	{ cat: "Extensions", name: "Collapsible", layout: "sC | {sb}#", w: 500, h: 250, vars: { sb: 200 },
@@ -242,10 +242,10 @@ let presets = [
 		src: '<Grid layout="| abc 8 | {a} {b} {c}"\n\textensions={[\n\t\taccordion({ var: "active", collapsed: ".", items: [\n\t\t\t{ area: "a", sizeVar: "a", expanded: "#" },\n\t\t\t{ area: "b", sizeVar: "b", expanded: "#" },\n\t\t\t{ area: "c", sizeVar: "c", expanded: "#" },\n\t\t] })\n\t]}\n>\n\t...\n</Grid>',
 		guide: "Mutual exclusion: expanding one section collapses the others. The layout uses variables for row sizes — `.` (auto/collapsed) and `#` (1fr/expanded). The accordion extension manages which section gets which value.",
 		tryThis: ["Click each section header to expand it", "Notice the others collapse automatically"] },
-	{ cat: "Extensions", name: "Scrollable", layout: "hscf hhh scc sff 8 | {sb}# | 40#40", w: 500, h: 350, vars: { sb: 200 },
-		ext: () => [scrollable({ area: ["s", "c"] }), splitPane({ var: "sb", edge: "s:e", min: 80, max: 300 })],
+	{ cat: "Extensions", name: "Scrollable", layout: "hscf hhh scc sff 8 | {sb}# | 40#40", w: 500, h: 350, vars: { sb: 100 },
+		ext: () => [scrollable({ area: ["s", "c"] }), splitPane({ var: "sb", edge: "s:r", min: 50, max: 300 })],
 		children: () => [<Box key="h" c={0}>Header</Box>, <div key="s" style={{ background: "#1a1a2e" }}><div style={{ padding: 8, fontSize: 11, color: "#c792ea", borderBottom: "1px solid #2a2a4a" }}>Sidebar</div>{loremItems(12)}</div>, <div key="c" style={{ background: "#1a1a2e" }}><div style={{ padding: 8, fontSize: 11, color: "#c3e88d", borderBottom: "1px solid #2a2a4a" }}>Content</div>{loremItems(20)}</div>, <Box key="f" c={3}>Footer</Box>],
-		src: '<Grid layout="hscf hhh scc sff 8 | {sb}# | 40#40"\n\textensions={[\n\t\tscrollable({ area: ["s", "c"] }),\n\t\tsplitPane({ var: "sb", edge: "s:e" })\n\t]}\n>\n\t...\n</Grid>',
+		src: '<Grid layout="hscf hhh scc sff 8 | {sb}# | 40#40"\n\textensions={[\n\t\tscrollable({ area: ["s", "c"] }),\n\t\tsplitPane({ var: "sb", edge: "s:r" })\n\t]}\n>\n\t...\n</Grid>',
 		guide: "Fixed header and footer with independently scrollable sidebar and content — a very common layout need. The `scrollable` extension marks areas as overflow-scrollable. Combined with split pane, you get a fully interactive IDE-style layout.",
 		tryThis: ["Scroll sidebar and content independently", "Drag the divider — both areas adjust and keep scrolling"] },
 	{ cat: "Extensions", name: "Tabs", layout: "| abc .abc | 28 {_tab_a} {_tab_b} {_tab_c}", w: 400, h: 250, vars: { tab: "a" },
@@ -270,11 +270,11 @@ let presets = [
 		src: '<Grid layout="| hmCf hcfm 8 | 40#40"\n\textensions={[\n\t\toverlay({ area: "m", over: "c" })\n\t]}\n>\n\t...\n</Grid>',
 		guide: "Overlay places one area on top of another. Area `m` covers the same grid cells as area `c` but with higher z-index. Useful for modals, loading states, or any layered content. The area is always in the layout — the extension positions it.",
 		tryThis: ["Toggle the overlay checkbox", "The modal covers the content area without disturbing the layout"] },
-	{ cat: "Extensions", name: "Multi-Column", layout: "hscf hhhh sccc ffff {g} | {sb}### | 40#40", w: 600, h: 300, vars: { sb: 200, g: 8 },
+	{ cat: "Extensions", name: "Multi-Column", layout: "hscf hhhh sccc ffff {g} ?h | {sb}### | 40#40", w: 600, h: 300, vars: { sb: 200, g: 8 },
 		ext: (v, p) => [multiColumn({ area: "c", fill: p?.fill || "auto" })],
 		children: () => [<Box key="h" c={0}>Header</Box>, <div key="s" style={{ background: "#3a1e5f", padding: 12, color: "#c792ea", fontSize: 11 }}>Sidebar</div>, <div key="c" style={{ background: "#1a1a2e", padding: 12, color: "#999", fontSize: 12, lineHeight: 1.7 }}>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident.</div>, <Box key="f" c={3}>Footer</Box>],
 		params: [{ key: "sb", label: "sidebar", type: "range", min: 100, max: 350, def: 200 }, { key: "g", label: "gap", type: "range", min: 0, max: 20, def: 8 }, { key: "fill", label: "col-fill", type: "toggle", on: "balance", off: "auto" }],
-		src: '<Grid layout="hscf hhhh sccc ffff {g} | {sb}### | 40#40"\n\textensions={[\n\t\tmultiColumn({ area: "c", fill: "auto" })\n\t]}\n>\n\t...\n</Grid>',
+		src: '<Grid layout="hscf hhhh sccc ffff {g} ?h | {sb}### | 40#40"\n\textensions={[\n\t\tmultiColumn({ area: "c", fill: "auto" })\n\t]}\n>\n\t...\n</Grid>',
 		guide: "Area `c` spans three grid columns. The multi-column extension reads the actual computed track widths and sets CSS column properties to match — so text flows across columns that align perfectly with the grid.\n\nToggle column-fill between `balance` (even distribution) and `auto` (sequential fill). Adjust the sidebar width — columns recalculate automatically.",
 		tryThis: ["Toggle balance/auto to see different text distribution", "Drag the sidebar slider — columns adapt", "Adjust the gap slider"] },
 
@@ -615,6 +615,104 @@ let presets = [
 		src: 'render({\n\tcell: (child, style, key, idx, parsed) =>\n\t\tidx % parsed.colCount===0\n\t\t\t? <dt ...> : <dd ...>,\n\tcontainer: ({props, children}) =>\n\t\t<dl {...props}>{children}</dl>\n})',
 		guide: "Semantic HTML via the `render` extension. The `cell` callback picks `<dt>` or `<dd>` based on column index, and the `container` callback wraps everything in a `<dl>`. Grid layout logic stays the same — only the DOM output changes.",
 		tryThis: ["This renders as a proper `<dl>` definition list", "The cell callback decides the tag per column"] },
+
+		// --- overlap ---
+		{ cat: "Overlap", name: "Testimonial Card", layout: "iq ii. i[qi]q .qq | 50 50 | 50 50", w: 500, h: 280,
+			children: () => [
+				<div key="photo" style={{
+					width: "100%", height: "100%",
+					background: "linear-gradient(135deg, #3a1e5f, #2a3a6f)",
+					borderRadius: "50%", border: "3px solid #c792ea",
+					display: "flex", alignItems: "center", justifyContent: "center",
+					fontSize: 32, color: "#c792ea", zIndex: 2,
+				}}>👤</div>,
+				<div key="quote" style={{
+					background: "#1a1a2e", borderRadius: 12, padding: 16, paddingLeft: 50,
+					color: "#ccc", fontSize: 13, lineHeight: 1.6,
+					display: "flex", flexDirection: "column", justifyContent: "center",
+				}}>
+					<span style={{ color: "#f78c6c", fontSize: 28, fontFamily: "serif" }}>"</span>
+					Lorem ipsum dolor sit amet consectetur. Sagittis nisi feugiat eros urna vestibulum cras iaculis odio.
+					<span style={{ color: "#7fdbca", marginTop: 12, fontSize: 12 }}>– Jane L. Student</span>
+				</div>,
+			],
+			src: '<Grid layout="iq ii. i[qi]q .qq | 50 50 | 50 50">\n\t<Photo/>\n\t<Quote/>\n</Grid>',
+			guide: "**Overlap** via `[]` bracket cells. The `[iq]` cell marks where the photo (`i`) and quote (`q`) share a grid cell. Each area's bounding rectangle is computed and converted to explicit `grid-column`/`grid-row` placement.\n\nThis layout was impossible before — `grid-template-areas` doesn't allow two areas in one cell.",
+			tryThis: ["The photo spans rows 1-2, cols 1-2", "The quote spans rows 2-3, cols 2-4", "They overlap at row 2, col 2"] },
+		{ cat: "Overlap", name: "Testimonial (+ layers)", layout: "iq . .qqq .qqq + ii ii | 50 50 | 50 50", w: 500, h: 280,
+			children: () => [
+				<div key="photo" style={{
+					width: "100%", height: "100%",
+					background: "linear-gradient(135deg, #3a1e5f, #2a3a6f)",
+					borderRadius: "50%", border: "3px solid #c792ea",
+					display: "flex", alignItems: "center", justifyContent: "center",
+					fontSize: 32, color: "#c792ea", zIndex: 2,
+				}}>👤</div>,
+				<div key="quote" style={{
+					background: "#1a1a2e", borderRadius: 12, padding: 16, paddingLeft: 50,
+					color: "#ccc", fontSize: 13, lineHeight: 1.6,
+					display: "flex", flexDirection: "column", justifyContent: "center",
+				}}>
+					<span style={{ color: "#f78c6c", fontSize: 28, fontFamily: "serif" }}>"</span>
+					Lorem ipsum dolor sit amet consectetur. Sagittis nisi feugiat eros urna vestibulum cras iaculis odio.
+					<span style={{ color: "#7fdbca", marginTop: 12, fontSize: 12 }}>– Jane L. Student</span>
+				</div>,
+			],
+			src: '<Grid layout="iq . .qqq .qqq + ii ii | 50 50 | 50 50">\n\t<Photo/>\n\t<Quote/>\n</Grid>',
+			guide: "Same testimonial card, but using **`+` layer syntax** instead of `[]` cells. Each layer is a separate grid map — the parser pads them to the same dimensions and overlays them. Where both layers have an area in the same cell, a `[xy]` bracket is auto-generated.\n\nSame output, different authoring style — layers are more visual for complex overlaps.",
+			tryThis: ["Compare with the [] version above", "Each layer shows one area's footprint clearly", "The `+` splits the two layers"] },
+	{ cat: "Overlap", name: "Line Placement", layout: "i[1:3, 1:3, 1] q[2:4, 2:4] | 50 50 | 50 50 .", w: 400, h: 280,
+		children: () => [
+			<div key="photo" style={{
+				width: "100%", height: "100%",
+				background: "linear-gradient(135deg, #3a1e5f, #2a3a6f)",
+				borderRadius: "50%", border: "3px solid #c792ea",
+				display: "flex", alignItems: "center", justifyContent: "center",
+				fontSize: 32, color: "#c792ea",
+			}}>👤</div>,
+			<div key="quote" style={{
+				background: "#1a1a2e", borderRadius: 12, padding: 16, paddingLeft: 50,
+				color: "#ccc", fontSize: 13, lineHeight: 1.6,
+				display: "flex", flexDirection: "column", justifyContent: "center",
+			}}>
+				<span style={{ color: "#f78c6c", fontSize: 28, fontFamily: "serif" }}>"</span>
+				Explicit grid line numbers — no map needed.
+				<span style={{ color: "#7fdbca", marginTop: 12, fontSize: 12 }}>– Direct Placement</span>
+			</div>,
+		],
+		src: '<Grid layout="i[1:3, 1:3, 1] q[2:4, 2:4] | 50 50 | 50 50 .">\n\t<Photo/>\n\t<Quote/>\n</Grid>',
+		guide: "**Direct line placement** with `[col,row]` syntax. No area map at all — each area gets explicit `grid-column` and `grid-row` values. `1:3` becomes `1 / 3` in CSS.\n\nSupports negative lines (`-1` = last), z-index as third param (`[1:3,1:3,10]`), and alignment modifiers (`i(cC)[1:3,1:3]`).",
+		tryThis: ["Try `i[1:3,1:3,10]` to add z-index", "Try `i(cC)[1:3,1:3]` to center the photo", "Negative lines work: `i[1:-1,1:-1]` spans full grid"] },
+	{ cat: "Overlap", name: "Callout Card", layout: "qit qqq.. qqq.. qqq.. + ..iii ..iii ..iii + ..... ..... ttttt | # # # # # | # # #", w: 550, h: 220,
+		children: () => [
+			<div key="content" style={{
+				background: "#1a1a2e", borderRadius: 8, padding: "20px 24px",
+				display: "flex", flexDirection: "column", justifyContent: "center",
+			}}>
+				<div style={{ fontWeight: 700, fontSize: 16, fontStyle: "italic", color: "#eee", marginBottom: 8 }}>Basic Callout</div>
+				<div style={{ fontSize: 12, color: "#999", lineHeight: 1.6 }}>
+					Lorem ipsum dolor sit amet. Sagittis nisi feugiat eros urna vestibulum cras iaculis odio.
+				</div>
+				<div style={{
+					marginTop: 12, display: "inline-flex", alignItems: "center", gap: 8,
+					background: "#f5f0eb", color: "#333", borderRadius: 20, padding: "6px 16px",
+					fontSize: 12, fontWeight: 600, width: "fit-content",
+				}}>Learn More <span style={{ color: "#f78c6c" }}>→</span></div>
+			</div>,
+			<div key="image" style={{
+				width: "100%", height: "100%",
+				background: "linear-gradient(135deg, #2a3a5f 0%, #3a4a7f 100%)",
+				display: "flex", alignItems: "center", justifyContent: "center",
+				fontSize: 48, color: "#7fdbca55",
+			}}>🖼</div>,
+			<div key="accent" style={{
+				background: "linear-gradient(90deg, #f78c6c, #ffcb6b)",
+				borderRadius: 2, alignSelf: "end", height: 4,
+			}} />,
+		],
+		src: '<Grid layout="qit\n\tqqq.. qqq.. qqq..\n\t+ ..iii ..iii ..iii\n\t+ ..... ..... ttttt\n\t| # # # # # | # # #">\n\t<Content/>\n\t<Image/>\n\t<Accent/>\n</Grid>',
+		guide: "A complex **three-layer overlap**. Content panel (`q`) spans the left 3 cols, image (`i`) spans the right 3 cols, accent bar (`t`) sits at the bottom across all 5 cols. Each layer is drawn separately with `+`, and the parser auto-detects where they overlap.\n\nAll three areas get explicit `grid-column`/`grid-row` placement — the normal template-areas map becomes all dots.",
+		tryThis: ["Three layers separated by `+`", "q and i overlap in the middle column", "t overlaps with both at the bottom row"] },
 ];
 
 // ============================================================
@@ -623,7 +721,8 @@ let presets = [
 
 let categories = [...new Set(presets.map(p => p.cat))];
 
-let Playground = () => {
+// --- shared state hook ---
+let usePlaygroundState = () => {
 	let [presetIdx, setPresetIdx] = React.useState(0);
 	let preset = presets[presetIdx];
 	let [layout, setLayout] = React.useState(preset.layout);
@@ -632,16 +731,18 @@ let Playground = () => {
 		let d = {}; (preset.params || []).forEach(p => { if (p.def != null) d[p.key] = p.def; }); return d;
 	});
 	let [showGrid, setShowGrid] = React.useState(true);
-	let [panel, setPanel] = React.useState("guide"); // "guide" | "debug" | "source"
-	let [vars2, setVars2] = React.useState({ sb: 260 });
+	let [panel, setPanel] = React.useState("guide");
 
-	let selectPreset = (idx) => {
-		let p = presets[idx];
+	let applyPreset = (idx, p) => {
 		setPresetIdx(idx);
 		setLayout(p.layout);
 		setVars(p.vars ? { ...p.vars } : {});
 		let d = {}; (p.params || []).forEach(pm => { if (pm.def != null) d[pm.key] = pm.def; }); setParams(d);
 	};
+	let selectPreset = idx => applyPreset(idx, presets[idx]);
+	let resetPreset = () => applyPreset(presetIdx, preset);
+	let prevPreset = () => selectPreset((presetIdx - 1 + presets.length) % presets.length);
+	let nextPreset = () => selectPreset((presetIdx + 1) % presets.length);
 
 	let extensions = preset.ext ? preset.ext(vars, params) : [];
 	if (showGrid) extensions = [...extensions, debug()];
@@ -670,178 +771,391 @@ let Playground = () => {
 	let responsiveProps = {};
 	["xs","sm","md","lg","xl"].forEach(bp => { if (preset[bp]) responsiveProps[bp] = preset[bp]; });
 
+	let isDirty = layout !== preset.layout;
+
+	return {
+		presetIdx, preset, layout, setLayout, vars, setVars, params, setParams,
+		showGrid, setShowGrid, panel, setPanel,
+		selectPreset, resetPreset, prevPreset, nextPreset,
+		extensions, allVars, children, parsed, cssLines, extSummary, responsiveProps, isDirty,
+	};
+};
+
+// --- shared sub-components ---
+
+let GuidePanel = ({ preset, parsed, cssLines, extSummary, responsiveProps, panel, setPanel }) => {
+	let isMobile = useIsMobile();
+	let tabs = [["guide", "Guide"], ["debug", "Debug"]];
+	if (isMobile)
+		tabs.push(["source", "Source"]);
+	let source = <div style={{ marginTop: 8, flex: 1 }}>
+		{preset.src
+			? <pre style={{ background: "#0a0a18", border: "1px solid #2a2a4a", borderRadius: 4, padding: 12, color: "#b8b8d0", fontSize: 11, lineHeight: 1.7, margin: 0, whiteSpace: "pre", wordBreak: "break-word", tabSize: 4 }}>{preset.src}</pre>
+			: <div style={{ color: "#555", fontSize: 12, padding: 8 }}>No source example for this preset.</div>
+		}
+		{Object.keys(responsiveProps).length > 0 && <div style={{ marginTop: 8 }}>
+			<div style={{ fontSize: 10, color: "#c792ea", textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>Responsive breakpoints</div>
+			{Object.entries(responsiveProps).map(([bp, val]) =>
+				<div key={bp} style={{ fontSize: 11, marginBottom: 2 }}>
+					<span style={{ color: "#f78c6c" }}>{bp}</span>
+					<span style={{ color: "#555" }}>{" = "}</span>
+					<span style={{ color: "#c3e88d" }}>"{val}"</span>
+				</div>
+			)}
+		</div>}
+	</div>
+	return <>
+		<div className="pg-tabs">
+			{tabs.map(([id, label]) =>
+				<button key={id} className={`pg-tab ${panel==id ? "act" : ""}`}
+					onClick={() => setPanel(id)}>{label}</button>
+			)}
+		</div>
+		<div style={{ flex: 1, padding: "0 12px 12px", overflow: "auto" }}>
+			{panel == "guide" && <div style={{ display: "flex", gap: 16 }}>
+				<div className="pg-guide">
+					{(preset.guide || "").split("\n\n").map((p, i) =>
+						<p key={i} dangerouslySetInnerHTML={{ __html: p
+							.replace(/</g, "&lt;")
+							.replace(/\*\*(.+?)\*\*/g, "<b>$1</b>")
+							.replace(/`(.+?)`/g, "<code>$1</code>")
+						}} />
+					)}
+					{preset.tryThis && <div className="pg-try">
+						<div className="pg-try-title">Try this</div>
+						<ul style={{ margin: 0, padding: 0 }}>
+							{preset.tryThis.map((hint, i) =>
+								<li key={i} dangerouslySetInnerHTML={{ __html: hint
+									.replace(/</g, "&lt;")
+									.replace(/`(.+?)`/g, "<code>$1</code>")
+								}} />
+							)}
+						</ul>
+					</div>}
+				</div>
+				{!isMobile && source}
+			</div>}
+			{panel == "debug" && <div className="pg-dbg" style={{ marginTop: 8 }}>
+				{parsed.error
+					? <div style={{ color: "#ff5370" }}>Error: {parsed.error}</div>
+					: <>
+						{parsed.expanded && <div><span className="k">expanded: </span><span className="v">{parsed.areas.join(" ")}</span></div>}
+						{parsed.repeatInfo && <div><span className="k">repeat: </span><span className="v">[{parsed.repeatInfo.pattern}] ×{parsed.repeatInfo.count}{parsed.repeatInfo.pinned?.length ? ` pinned [${parsed.repeatInfo.pinned}]` : ""}</span></div>}
+						{parsed.templateAreas && <div><span className="k">areas: </span><span className="v">{parsed.templateAreas.join(" ")}</span></div>}
+						<div><span className="k">cols: </span><span className="v">{parsed.colSizes.join(" ")}</span></div>
+						<div><span className="k">rows: </span><span className="v">{parsed.rowSizes.join(" ")}</span></div>
+						{parsed.gapH != null && <div><span className="k">gap: </span><span className="v">{parsed.gapH === parsed.gapV ? parsed.gapH + "px" : parsed.gapH + "px " + parsed.gapV + "px"}</span></div>}
+						{parsed.flags?.justifyContent && <div><span className="k">justify: </span><span className="v">{parsed.flags.justifyContent}</span></div>}
+						{parsed.flags?.alignContent && <div><span className="k">align: </span><span className="v">{parsed.flags.alignContent}</span></div>}
+						<div><span className="k">extensions: </span><span className="v">{extSummary}</span></div>
+						{Object.keys(parsed.vars || {}).length > 0 && <div><span className="k">vars: </span><span className="v">{JSON.stringify(parsed.vars)}</span></div>}
+						<div style={{ borderTop: "1px solid #2a2a4a", margin: "6px 0 4px", paddingTop: 4 }}><span className="k">css:</span></div>
+						<pre style={{ color: "#888", fontSize: 10, margin: 0, whiteSpace: "pre" }}>{"." + (preset.name.toLowerCase().replace(/\s+/g, "-")) + " {\n" + cssLines.join("\n") + "\n}"}</pre>
+					</>
+				}
+			</div>}
+			{panel == "source" && source}
+		</div>
+	</>
+}
+
+let ParamControls = ({ preset, params, setParams, vars, setVars }) => {
+	if (!(preset.params || []).length) return null;
+	return <div style={{ padding: "2px 10px 4px" }}>
+		{preset.params.map(pm => <div key={pm.key} className="pg-row">
+			<label>{pm.label}</label>
+			{pm.type === "range" && <>
+				<input type="range" min={pm.min} max={pm.max} value={params[pm.key] ?? pm.def ?? pm.min} onChange={e => {
+					let val = +e.target.value;
+					setParams({ ...params, [pm.key]: val });
+					if (vars[pm.key] != null) setVars({ ...vars, [pm.key]: val });
+				}} style={{ flex: 1 }} />
+				<span style={{ fontSize: 10, color: "#9cc", minWidth: 20 }}>{params[pm.key] ?? pm.def}</span>
+			</>}
+			{pm.type === "toggle" && <label className="pg-chk">
+				<input type="checkbox" checked={params[pm.key]==pm.on} onChange={e => {
+					let val = e.target.checked ? pm.on : pm.off;
+					setParams({ ...params, [pm.key]: val });
+					if (typeof pm.on === "number" && vars[pm.key] != null) setVars({ ...vars, [pm.key]: val });
+				}} />
+				{String(params[pm.key] ?? pm.off)}
+			</label>}
+		</div>)}
+	</div>;
+};
+
+let PresetNav = ({ presetIdx, selectPreset, prevPreset, nextPreset }) =>
+	<div className="pg-preset-nav">
+		<button className="pg-nav-btn" onClick={prevPreset} title="Previous preset">◀</button>
+		<div className="pg-nav-center">
+			<span className="pg-nav-cat">{presets[presetIdx].cat}</span>
+			<span className="pg-nav-name">{presets[presetIdx].name}</span>
+			<span className="pg-nav-count">{presetIdx + 1} / {presets.length}</span>
+		</div>
+		<button className="pg-nav-btn" onClick={nextPreset} title="Next preset">▶</button>
+	</div>;
+
+let PresetList = ({ presetIdx, selectPreset }) =>
+	<div style={{ flex: 1, overflowY: "auto", padding: "0 10px 10px" }}>
+		{categories.map(cat => <div key={cat}>
+			<div className="pg-cat">{cat}</div>
+			{presets.map((p, i) => p.cat !== cat ? null :
+				<button key={i} className={`pg-pre ${i === presetIdx ? "act" : ""}`}
+					onClick={() => selectPreset(i)}>{p.name}</button>
+			)}
+		</div>)}
+	</div>;
+
+// --- shared styles injected once ---
+let PlaygroundStyles = () =>
+	<Style>{`
+		.pg-input { width: 100%; background: #0f0f23; border: 1px solid #2a2a4a; border-radius: 4px; color: #c3e88d; font-family: inherit; font-size: 13px; padding: 8px 10px; resize: none; outline: none; line-height: 1.5; }
+		.pg-input:focus { border-color: #7fdbca; }
+		.pg-h2 { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #fff; padding: 8px 10px 4px; }
+		.pg-cat { font-size: 9px; color: #fff; text-transform: uppercase; letter-spacing: 1px; padding: 6px 8px 2px; }
+		.pg-pre { display: block; width: 100%; text-align: left; background: none; border: 1px solid transparent; border-radius: 3px; color: #999; font-family: inherit; font-size: 11px; padding: 3px 8px; margin-bottom: 1px; cursor: pointer; transition: all 0.1s; }
+		.pg-pre:hover { color: #ccc; background: #ffffff08; }
+		.pg-pre.act { color: #7fdbca; border-color: #7fdbca40; background: #7fdbca10; }
+		.pg-row { display: flex; align-items: center; gap: 6px; margin-bottom: 5px; }
+		.pg-row label { font-size: 12px; color: #9cc; min-width: 55px; }
+		.pg-chk { display: flex; align-items: center; gap: 4px; font-size: 12px; color: #9cc; cursor: pointer; }
+		.pg-chk input { accent-color: #7fdbca; }
+		.pg-dbg { background: #0f0f23; border: 1px solid #2a2a4a; border-radius: 4px; padding: 8px; font-size: 11px; line-height: 1.6; overflow: auto; }
+		.pg-dbg .k { color: #c792ea; } .pg-dbg .v { color: #c3e88d; }
+		.pg-tabs { display: flex; gap: 0; border-bottom: 1px solid #2a2a4a; margin: 0 12px; }
+		.pg-tab { background: none; border: none; border-bottom: 2px solid transparent; color: #555; font-family: inherit; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; padding: 6px 10px; cursor: pointer; transition: all 0.15s; }
+		.pg-tab:hover { color: #999; }
+		.pg-tab.act { color: #7fdbca; border-bottom-color: #7fdbca; }
+		.pg-guide { padding: 10px 0; font-size: 12px; line-height: 1.7; color: #999; }
+		.pg-guide p { margin: 0 0 8px; }
+		.pg-guide strong, .pg-guide b { color: #ccc; font-weight: 600; }
+		.pg-guide code { color: #c3e88d; background: #0f0f23; padding: 1px 5px; border-radius: 3px; font-size: 11px; tab-size: 4; }
+		.pg-try { margin-top: 8px; padding: 8px 10px; background: rgba(127,219,202,0.04); border: 1px solid rgba(127,219,202,0.1); border-radius: 4px; }
+		.pg-try-title { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #7fdbca; margin-bottom: 6px; }
+		.pg-try li { font-size: 11px; color: #888; line-height: 1.6; margin-bottom: 2px; list-style: none; padding-left: 12px; position: relative; }
+		.pg-try li::before { content: "?"; position: absolute; left: 0; color: #7fdbca60; }
+		.pg-try li code { color: #c3e88d; background: #0f0f23; padding: 1px 4px; border-radius: 2px; font-size: 10px; }
+
+		/* --- preset nav --- */
+		.pg-preset-nav { display: flex; align-items: center; gap: 0; border-top: 1px solid #2a2a4a; background: #0f0f1a; flex-shrink: 0; }
+		.pg-nav-btn { background: none; border: none; color: #7fdbca; font-family: inherit; font-size: 16px; padding: 8px 14px; cursor: pointer; flex-shrink: 0; transition: background 0.1s; line-height: 1; }
+		.pg-nav-btn:hover { background: #7fdbca18; }
+		.pg-nav-btn:active { background: #7fdbca28; }
+		.pg-nav-center { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 6px 0; overflow: hidden; }
+		.pg-nav-cat { font-size: 9px; color: #555; text-transform: uppercase; letter-spacing: 1px; }
+		.pg-nav-name { font-size: 12px; color: #ccc; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+		.pg-nav-count { font-size: 9px; color: #444; }
+
+		/* --- reset btn --- */
+		.pg-reset { background: none; border: 1px solid #2a2a4a; border-radius: 3px; color: #555; font-family: inherit; font-size: 10px; padding: 2px 7px; cursor: pointer; transition: all 0.1s; line-height: 1.6; }
+		.pg-reset:hover { color: #f78c6c; border-color: #f78c6c60; background: #f78c6c10; }
+		.pg-reset.dirty { color: #f78c6c; border-color: #f78c6c60; }
+	`}</Style>;
+
+// --- desktop playground ---
+let DesktopPlayground = () => {
+	let s = usePlaygroundState();
+	let [vars2, setVars2] = React.useState({ sb: 260 });
+
 	return <Grid layout="pC pc ?wh | {sb}#" vars={vars2} onVarsChange={setVars2} extensions={[
 		scrollable({ area: ["p", "c"] }), splitPane({ var: "sb", edge: "p:e", min: 80, max: 300 })
 	]}>
-		<Style>{`
-			.pg-input { width: 100%; background: #0f0f23; border: 1px solid #2a2a4a; border-radius: 4px; color: #c3e88d; font-family: inherit; font-size: 13px; padding: 8px 10px; resize: none; outline: none; line-height: 1.5; }
-			.pg-input:focus { border-color: #7fdbca; }
-			.pg-h2 { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #fff; padding: 8px 10px 4px; }
-			.pg-cat { font-size: 9px; color: #fff; text-transform: uppercase; letter-spacing: 1px; padding: 6px 8px 2px; }
-			.pg-pre { display: block; width: 100%; text-align: left; background: none; border: 1px solid transparent; border-radius: 3px; color: #999; font-family: inherit; font-size: 11px; padding: 3px 8px; margin-bottom: 1px; cursor: pointer; transition: all 0.1s; }
-			.pg-pre:hover { color: #ccc; background: #ffffff08; }
-			.pg-pre.act { color: #7fdbca; border-color: #7fdbca40; background: #7fdbca10; }
-			.pg-row { display: flex; align-items: center; gap: 6px; margin-bottom: 5px; }
-			.pg-row label { font-size: 12px; color: #9cc; min-width: 55px; }
-			.pg-chk { display: flex; align-items: center; gap: 4px; font-size: 12px; color: #9cc; cursor: pointer; }
-			.pg-chk input { accent-color: #7fdbca; }
-			.pg-dbg { background: #0f0f23; border: 1px solid #2a2a4a; border-radius: 4px; padding: 8px; font-size: 11px; line-height: 1.6; overflow: auto; }
-			.pg-dbg .k { color: #c792ea; } .pg-dbg .v { color: #c3e88d; }
-			.pg-tabs { display: flex; gap: 0; border-bottom: 1px solid #2a2a4a; margin: 0 12px; }
-			.pg-tab { background: none; border: none; border-bottom: 2px solid transparent; color: #555; font-family: inherit; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; padding: 6px 10px; cursor: pointer; transition: all 0.15s; }
-			.pg-tab:hover { color: #999; }
-			.pg-tab.act { color: #7fdbca; border-bottom-color: #7fdbca; }
-			.pg-guide { padding: 10px 0; font-size: 12px; line-height: 1.7; color: #999; }
-			.pg-guide p { margin: 0 0 8px; }
-			.pg-guide strong, .pg-guide b { color: #ccc; font-weight: 600; }
-			.pg-guide code { color: #c3e88d; background: #0f0f23; padding: 1px 5px; border-radius: 3px; font-size: 11px; tab-size: 4; }
-			.pg-try { margin-top: 8px; padding: 8px 10px; background: rgba(127,219,202,0.04); border: 1px solid rgba(127,219,202,0.1); border-radius: 4px; }
-			.pg-try-title { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #7fdbca; margin-bottom: 6px; }
-			.pg-try li { font-size: 11px; color: #888; line-height: 1.6; margin-bottom: 2px; list-style: none; padding-left: 12px; position: relative; }
-			.pg-try li::before { content: "→"; position: absolute; left: 0; color: #7fdbca60; }
-			.pg-try li code { color: #c3e88d; background: #0f0f23; padding: 1px 4px; border-radius: 2px; font-size: 10px; }
-		`}</Style>
+		<PlaygroundStyles />
 
 		{/* --- left panel --- */}
 		<div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-			<div className="pg-h2">Layout</div>
+			<div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingRight: 10 }}>
+				<div className="pg-h2">Layout</div>
+				<button className={`pg-reset ${s.isDirty ? "dirty" : ""}`} onClick={s.resetPreset} title="Reset to preset default">reset</button>
+			</div>
 			<div style={{ padding: "0 10px 4px" }}>
-				<textarea className="pg-input" rows={3} spellCheck={false} value={layout} onChange={e => setLayout(e.target.value)} />
+				<textarea className="pg-input" rows={3} spellCheck={false} value={s.layout} onChange={e => s.setLayout(e.target.value)} />
 			</div>
-
-			{(preset.params || []).length > 0 && <div style={{ padding: "2px 10px 4px" }}>
-				{preset.params.map(pm => <div key={pm.key} className="pg-row">
-					<label>{pm.label}</label>
-					{pm.type === "range" && <>
-						<input type="range" min={pm.min} max={pm.max} value={params[pm.key] ?? pm.def ?? pm.min} onChange={e => {
-							let val = +e.target.value;
-							setParams({ ...params, [pm.key]: val });
-							if (vars[pm.key] != null) setVars({ ...vars, [pm.key]: val });
-						}} style={{ flex: 1 }} />
-						<span style={{ fontSize: 10, color: "#9cc", minWidth: 20 }}>{params[pm.key] ?? pm.def}</span>
-					</>}
-					{pm.type === "toggle" && <label className="pg-chk">
-						<input type="checkbox" checked={params[pm.key]==pm.on} onChange={e => {
-							let val = e.target.checked ? pm.on : pm.off;
-							setParams({ ...params, [pm.key]: val });
-							if (typeof pm.on === "number" && vars[pm.key] != null) setVars({ ...vars, [pm.key]: val });
-						}} />
-						{String(params[pm.key] ?? pm.off)}
-					</label>}
-				</div>)}
-			</div>}
-
+			<ParamControls preset={s.preset} params={s.params} setParams={s.setParams} vars={s.vars} setVars={s.setVars} />
 			<div style={{ padding: "0 10px 4px", display: "flex", gap: 10 }}>
-				<label className="pg-chk"><input type="checkbox" checked={showGrid} onChange={e => setShowGrid(e.target.checked)} /> grid overlay</label>
+				<label className="pg-chk"><input type="checkbox" checked={s.showGrid} onChange={e => s.setShowGrid(e.target.checked)} /> grid overlay</label>
 			</div>
-			{preset.info && <div style={{ padding: "2px 10px 4px", fontSize: 10, color: "#f78c6c" }}>{preset.info}</div>}
+			{s.preset.info && <div style={{ padding: "2px 10px 4px", fontSize: 10, color: "#f78c6c" }}>{s.preset.info}</div>}
 
-			<div className="pg-h2">Presets</div>
-			<div style={{ flex: 1, overflowY: "auto", padding: "0 10px 10px" }}>
-				{categories.map(cat => <div key={cat}>
-					<div className="pg-cat">{cat}</div>
-					{presets.map((p, i) => p.cat !== cat ? null :
-						<button key={i} className={`pg-pre ${i === presetIdx ? "act" : ""}`} onClick={() => selectPreset(i)}>{p.name}</button>
-					)}
-				</div>)}
+			<div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingRight: 10 }}>
+				<div className="pg-h2">Presets</div>
+				<div style={{ display: "flex", gap: 2 }}>
+					<button className="pg-nav-btn" style={{ fontSize: 12, padding: "4px 8px" }} onClick={s.prevPreset} title="Previous">?</button>
+					<button className="pg-nav-btn" style={{ fontSize: 12, padding: "4px 8px" }} onClick={s.nextPreset} title="Next">?</button>
+				</div>
 			</div>
+			<PresetList presetIdx={s.presetIdx} selectPreset={s.selectPreset} />
 		</div>
 
 		{/* --- right panel --- */}
 		<div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
 			<div className="pg-h2" style={{ display: "flex", gap: 8, alignItems: "center" }}>
-				Preview <span style={{ color: "#fff8", fontSize: 9 }}>{preset.cat} / {preset.name}</span>
+				Preview <span style={{ color: "#fff8", fontSize: 9 }}>{s.preset.cat} / {s.preset.name}</span>
 			</div>
 			<div style={{ padding: "0 12px 8px", flexShrink: 0 }}>
-				<div style={{ width: preset.w || "100%", height: preset.h || "auto", minHeight: 20, border: "1px dashed #2a2a4a", borderRadius: 4, position: "relative", overflow: "hidden", resize: "both" }}>
-					<Grid layout={layout} vars={allVars} onVarsChange={setVars} extensions={extensions}
-						style={{ ...(preset.gridStyle || {}) }}
-						{...responsiveProps}>
-						{children}
+				<div style={{ width: s.preset.w || "100%", height: s.preset.h || "auto", minHeight: 20, maxWidth: "100%", border: "1px dashed #2a2a4a", borderRadius: 4, position: "relative", overflow: "hidden", resize: "both" }}>
+					<Grid layout={s.layout} vars={s.allVars} onVarsChange={s.setVars} extensions={s.extensions}
+						style={{ ...(s.preset.gridStyle || {}) }}
+						{...s.responsiveProps}>
+						{s.children}
 					</Grid>
 				</div>
-				{parsed.error && <div style={{ color: "#ff5370" }}>Error: {parsed.error}</div>}
+				{s.parsed.error && <div style={{ color: "#ff5370" }}>Error: {s.parsed.error}</div>}
 			</div>
-
-			{/* --- panel tabs --- */}
-			<div className="pg-tabs">
-				{[["guide", "Guide"], ["debug", "Debug"]].map(([id, label]) =>
-					<button key={id} className={`pg-tab ${panel==id ? "act" : ""}`}
-						onClick={() => setPanel(id)}>{label}</button>
-				)}
-			</div>
-
-			<div style={{ flex: 1, padding: "0 12px 12px", overflow: "auto" }}>
-				{/* --- guide panel --- */}
-				{panel == "guide" && <div style={{display:"flex",gap:16}}>
-					{<div className="pg-guide">
-						{(preset.guide || "").split("\n\n").map((p, i) =>
-							<p key={i} dangerouslySetInnerHTML={{ __html: p
-								.replace(/</g,"&lt;")
-								.replace(/\*\*(.+?)\*\*/g, "<b>$1</b>")
-								.replace(/`(.+?)`/g, "<code>$1</code>")
-							}} />
-						)}
-						{preset.tryThis && <div className="pg-try">
-							<div className="pg-try-title">Try this</div>
-							<ul style={{ margin: 0, padding: 0 }}>
-								{preset.tryThis.map((hint, i) =>
-									<li key={i} dangerouslySetInnerHTML={{ __html: hint
-										.replace(/</g,"&lt;")
-										.replace(/`(.+?)`/g,"<code>$1</code>")
-									}} />
-								)}
-							</ul>
-						</div>}
-					</div>}
-
-					{/* --- source panel --- */}
-					{
-						//panel == "source" &&
-						<div style={{ marginTop: 8, flex: 1 }}>
-						{preset.src
-							? <pre style={{ background: "#0a0a18", border: "1px solid #2a2a4a", borderRadius: 4, padding: 12, color: "#b8b8d0", fontSize: 11, lineHeight: 1.7, margin: 0, whiteSpace: "pre", wordBreak: "break-word", tabSize: 4 }}>{preset.src}</pre>
-							: <div style={{ color: "#555", fontSize: 12, padding: 8 }}>No source example for this preset.</div>
-						}
-						{/* also show responsive props if any */}
-						{Object.keys(responsiveProps).length > 0 && <div style={{ marginTop: 8 }}>
-							<div style={{ fontSize: 10, color: "#c792ea", textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>Responsive breakpoints</div>
-							{Object.entries(responsiveProps).map(([bp, val]) =>
-								<div key={bp} style={{ fontSize: 11, marginBottom: 2 }}>
-									<span style={{ color: "#f78c6c" }}>{bp}</span>
-									<span style={{ color: "#555" }}>{" = "}</span>
-									<span style={{ color: "#c3e88d" }}>"{val}"</span>
-								</div>
-							)}
-						</div>}
-					</div>}
-				</div>}
-
-				{/* --- debug panel --- */}
-				{panel == "debug" && <div className="pg-dbg" style={{ marginTop: 8 }}>
-					{parsed.error
-						? <div style={{ color: "#ff5370" }}>Error: {parsed.error}</div>
-						: <>
-							{parsed.expanded && <div><span className="k">expanded: </span><span className="v">{parsed.areas.join(" ")}</span></div>}
-							{parsed.repeatInfo && <div><span className="k">repeat: </span><span className="v">[{parsed.repeatInfo.pattern}] ×{parsed.repeatInfo.count}{parsed.repeatInfo.pinned?.length ? ` pinned [${parsed.repeatInfo.pinned}]` : ""}</span></div>}
-							{parsed.templateAreas && <div><span className="k">areas: </span><span className="v">{parsed.templateAreas.join(" ")}</span></div>}
-							<div><span className="k">cols: </span><span className="v">{parsed.colSizes.join(" ")}</span></div>
-							<div><span className="k">rows: </span><span className="v">{parsed.rowSizes.join(" ")}</span></div>
-							{parsed.gapH != null && <div><span className="k">gap: </span><span className="v">{parsed.gapH === parsed.gapV ? parsed.gapH + "px" : parsed.gapH + "px " + parsed.gapV + "px"}</span></div>}
-							{parsed.flags?.justifyContent && <div><span className="k">justify: </span><span className="v">{parsed.flags.justifyContent}</span></div>}
-							{parsed.flags?.alignContent && <div><span className="k">align: </span><span className="v">{parsed.flags.alignContent}</span></div>}
-							<div><span className="k">extensions: </span><span className="v">{extSummary}</span></div>
-							{Object.keys(vars).length > 0 && <div><span className="k">vars: </span><span className="v">{JSON.stringify(vars)}</span></div>}
-							{Object.keys(params).length > 0 && <div><span className="k">params: </span><span className="v">{JSON.stringify(params)}</span></div>}
-							<div style={{ borderTop: "1px solid #2a2a4a", margin: "6px 0 4px", paddingTop: 4 }}><span className="k">css:</span></div>
-							<pre style={{ color: "#888", fontSize: 10, margin: 0, whiteSpace: "pre" }}>{"." + (preset.name.toLowerCase().replace(/\s+/g, "-")) + " {\n" + cssLines.join("\n") + "\n}"}</pre>
-						</>
-					}
-				</div>}
-			</div>
+			<GuidePanel preset={s.preset} parsed={s.parsed} cssLines={s.cssLines} extSummary={s.extSummary}
+				responsiveProps={s.responsiveProps} panel={s.panel} setPanel={s.setPanel} />
 		</div>
 	</Grid>;
 };
+
+let MobilePlayground = () => {
+	let s = usePlaygroundState();
+	let [v, setV] = React.useState({ nw: 200, w: 20, h: 400 });
+
+	return <div style={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
+		<PlaygroundStyles />
+		<Style>{`
+			.pg-mobile-scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+			.pg-drag-handle { height: 18px; display: flex; align-items: center; justify-content: center; cursor: ns-resize; background: #0f0f1a; border-top: 1px solid #2a2a4a; flex-shrink: 0; touch-action: none; }
+			.pg-drag-handle::after { content: ""; display: block; width: 32px; height: 3px; border-radius: 2px; background: #2a2a5a; }
+			.pg-drag-handle:hover::after, .pg-drag-handle:active::after { background: #7fdbca60; }
+			.pg-mobile-section { padding: 0 10px; border-bottom: 1px solid #1a1a2e; }
+			.pg-mobile-label { font-size: 9px; text-transform: uppercase; letter-spacing: 1px; color: #444; padding: 8px 0 4px; }
+		`}</Style>
+		<style>{css}</style>
+		<Grid
+			layout="RpBnl nn rp bb ll ?wh | #{w} | .{h}. 0~#"
+			md="RpBnl lnn lrp lbb ?wh | {nw}#{w} | .{h}#"
+			vars={v}
+			onVarsChange={setV}
+			extensions={[
+				splitPane({ var: "nw", edge: "n:r", min: 200, handleSize: 20 }),
+				splitPane({ var: "w", edge: "p:L", min: 20, handleSize: 20, handleClass: "rp-handle-x" }),
+				splitPane({ var: "h", edge: "r:b", min: 80, handleSize: 20, handleClass: "pg-drag-handle" }),
+				scrollable({ area: ["r","n","b","l"] }),
+			]}
+		>
+
+			{/* --- preview (fixed height, draggable) --- */}
+			<div style={{ padding: 12, paddingBottom: 16, width: "100%", height: "100%", overflow: "auto", position: "relative" }}>
+				<Grid layout={s.layout} vars={s.allVars} onVarsChange={s.setVars} extensions={s.extensions}
+					style={{ ...(s.preset.gridStyle || {}) }}
+					{...s.responsiveProps}>
+					{s.children}
+				</Grid>
+				{s.parsed.error && <div style={{ position: "absolute", bottom: 10, left: 10, right: 10, color: "#ff5370", fontSize: 10, background: "#1a0a0a", padding: "2px 6px", borderRadius: 3 }}>Error: {s.parsed.error}</div>}
+			</div>
+
+			<div></div>
+
+			{/* --- scrollable content below --- */}
+			<div className="pg-mobile-scroll">
+
+				{/* layout input */}
+				<div className="pg-mobile-section" style={{ paddingTop: 16, paddingBottom: 8 }}>
+					<div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
+						<div className="pg-mobile-label" style={{ padding: 0 }}>Layout string</div>
+						<div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+							<label className="pg-chk" style={{ fontSize: 10 }}><input type="checkbox" checked={s.showGrid} onChange={e => s.setShowGrid(e.target.checked)} /> overlay</label>
+							<button className={`pg-reset ${s.isDirty ? "dirty" : ""}`} onClick={s.resetPreset}>reset</button>
+						</div>
+					</div>
+					<textarea className="pg-input" rows={2} spellCheck={false} value={s.layout} onChange={e => s.setLayout(e.target.value)} style={{ fontSize: 12 }} />
+					{s.preset.info && <div style={{ fontSize: 10, color: "#f78c6c", marginTop: 3 }}>{s.preset.info}</div>}
+				</div>
+
+				{/* params */}
+				{(s.preset.params || []).length > 0 && <div className="pg-mobile-section" style={{ paddingTop: 4, paddingBottom: 6 }}>
+					<ParamControls preset={s.preset} params={s.params} setParams={s.setParams} vars={s.vars} setVars={s.setVars} />
+				</div>}
+
+				{/* guide */}
+				<div className="pg-mobile-section" style={{ paddingBottom: 8 }}>
+					<GuidePanel preset={s.preset} parsed={s.parsed} cssLines={s.cssLines} extSummary={s.extSummary}
+						responsiveProps={s.responsiveProps} panel={s.panel} setPanel={s.setPanel} />
+				</div>
+			</div>
+
+			<div style={{ paddingBottom: 0 }}>
+				<PresetNav presetIdx={s.presetIdx} selectPreset={s.selectPreset} prevPreset={s.prevPreset} nextPreset={s.nextPreset} />
+			</div>
+
+			<div style={{ paddingBottom: 16 }}>
+				<PresetList presetIdx={s.presetIdx} selectPreset={s.selectPreset} />
+			</div>
+		</Grid>
+	</div>;
+};
+
+let css = `
+.rp-handle-x {
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	right: -9px;
+	width: 18px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	cursor: col-resize;
+	z-index: 300;
+	flex-shrink: 0;
+	touch-action: none;
+}
+.rp-handle-x::after {
+	content: "";
+	display: block;
+	width: 3px;
+	height: 32px;
+	border-radius: 2px;
+	background: #2a2a5a;
+	transition: background 0.15s;
+}
+.rp-handle-x:hover::after,
+.rp-handle-x:active::after {
+	background: #7fdbca60;
+}
+.rp-handle-y {
+	position: absolute;
+	left: 0;
+	right: 0;
+	top: -9px;
+	height: 18px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	cursor: ns-resize;
+	z-index: 300;
+	flex-shrink: 0;
+	touch-action: none;
+}
+.rp-handle-y::after {
+	content: "";
+	display: block;
+	width: 32px;
+	height: 3px;
+	border-radius: 2px;
+	background: #2a2a5a;
+	transition: background 0.15s;
+}
+.rp-handle-y:hover::after,
+.rp-handle-y:active::after {
+	background: #7fdbca60;
+}
+`;
+
+// --- responsive switcher ---
+let useIsMobile = () => {
+	let [mobile, setMobile] = React.useState(() => window.innerWidth < 640);
+	React.useEffect(() => {
+		let fn = () => setMobile(window.innerWidth < 640);
+		window.addEventListener("resize", fn);
+		return () => window.removeEventListener("resize", fn);
+	}, []);
+	return mobile;
+};
+
+let Playground = () => useIsMobile() ? <MobilePlayground /> : <DesktopPlayground />;
 
 // ============================================================
 // --- app ---
@@ -865,7 +1179,7 @@ export default function App() {
 
 	let show = (id) => ({ display: tab == id ? "block" : "none", height: "100%", overflow: "hidden" });
 
-	return <Grid layout="|?wh|.#" style={{height:"100vh"}}>
+	return <Grid layout="|?wh|.#" style={{height:"100%",position:"fixed"}} className="app">
 		<Style>{`
 			/*
 			@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&family=DM+Sans:wght@400;500;700&display=swap');
@@ -880,6 +1194,7 @@ export default function App() {
 
 				background: #13131f; color: #ccc;
 			}
+			.app > * { min-width: 0; }
 			.demo-box { border-radius: 6px; padding: 8px 16px; font-size: 12px; font-weight: 600; display: flex; align-items: center; justify-content: center; min-height: 0px; height: 100%; width: 100%; }
 			.c0 { background: #1e3a5f; color: #7fdbca; border: 1px solid #2a5a8f; }
 			.c1 { background: #3a1e5f; color: #c792ea; border: 1px solid #5a2a8f; }
@@ -899,9 +1214,9 @@ export default function App() {
 				<button key={name} onClick={() => setTab(tabId)} style={{ background: "none", border: "none", color: tab==tabId ? "#7fdbca" : "#476", fontFamily: "inherit", fontSize: 14, cursor: "pointer", borderBottom: tab==tabId ? "2px solid #7fdbca" : "2px solid transparent", padding: "4px 8px" }}>{name}</button>
 			)}
 		</div>
-		<div style={{ overflow: "hidden", height: "100%" }}>
+		<div style={{ overflow: "hidden", height: "100%", minWidth: 0 }}>
 			<div style={show("landing")}>{mounted.landing && <LandingPage onNavigate={setTab} />}</div>
-			<div style={show("playground")}>{mounted.playground && <Playground />}</div>
+			<div style={show("playground")}>{mounted.playground && <MobilePlayground />}</div>
 			<div style={show("docs")}>{mounted.docs && <Docs />}</div>
 			{tab == "ogimage" && <OgImage />}
 		</div>

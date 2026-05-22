@@ -188,21 +188,20 @@ let accordion = (opts) => ({
 });
 
 // --- splitPane: draggable handle between areas ---
-// opts: { var, edge, axis, min, max }
+// opts: { var, edge, min, max }
 // - var: name of the var to control
-// - edge: "a:e" means right edge of area a, "b:s" means left edge of area b
-//         "a:S" / "a:E" for top/bottom (vertical splits)
-// - axis: "x" | "y" — inferred from edge if not specified
+// - edge: "a:tlbr" means top/left/bottom/right edge of area a, "a:TLBR" means inverted
 // - min/max: pixel constraints
 let splitPane = (opts) => ({
 	name: "splitPane",
 	needsAreas: true,
 	render: ({ parsed, vars, setVar, containerRef }) => {
-		let { var: varName, edge, axis: axisOpt, min = 0, max = 9999, handleSize = 6 } = opts;
+		let { var: varName, edge, min = 0, max = 9999, handleSize = 6, handleClass = undefined } = opts;
 
-		// parse edge: "a:e" → area a, side end
+		// parse edge: "a:e" -> area a, side end
 		let [edgeArea, edgeSide] = edge.split(":");
-		let axis = axisOpt || (edgeSide === "s" || edgeSide === "e" ? "x" : "y");
+		let edgeLower = edgeSide.toLowerCase();
+		let axis = edgeLower === "l" || edgeLower === "r" ? "x" : "y";
 		let isX = axis === "x";
 
 		let handleStyle = {
@@ -212,6 +211,7 @@ let splitPane = (opts) => ({
 			position: "relative",
 			zIndex: 200,
 			pointerEvents: "none",
+			touchAction: "none",
 		};
 
 		let barStyle = {
@@ -221,52 +221,53 @@ let splitPane = (opts) => ({
 			...(isX ? {
 				top: 0, bottom: 0, width: handleSize + "px",
 				cursor: "col-resize",
-				[edgeSide === "e" || edgeSide === "E" ? "right" : "left"]: -Math.floor(handleSize / 2) + "px",
+				[edgeLower === "r" ? "right" : "left"]: -Math.floor(handleSize / 2) + "px",
 			} : {
 				left: 0, right: 0, height: handleSize + "px",
 				cursor: "row-resize",
-				[edgeSide === "E" || edgeSide === "S" ? "bottom" : "top"]: -Math.floor(handleSize / 2) + "px",
+				[edgeLower === "b" ? "bottom" : "top"]: -Math.floor(handleSize / 2) + "px",
 			}),
-			background: "rgba(255,255,255,0.08)",
+//			background: "rgba(255,255,255,0.08)",
 			transition: "background 0.15s",
 		};
 
-		let onMouseDown = (e) => {
+		let onPointerDown = (e) => {
 			e.preventDefault();
+			e.target.setPointerCapture(e.pointerId);
 			let container = containerRef.current;
 			if (!container) return;
 			let startPos = isX ? e.clientX : e.clientY;
 			let startVal = parseFloat(vars[varName]) || 0;
 
 			// invert direction for right/bottom edges
-			let invert = edgeSide === "s" || edgeSide === "S" ? -1 : 1;
+			let invert = edgeSide === edgeSide.toUpperCase() ? -1 : 1;
 
-			let onMouseMove = (e2) => {
+			let onMove = (e2) => {
 				let delta = ((isX ? e2.clientX : e2.clientY) - startPos) * invert;
 				let newVal = Math.round(Math.min(max, Math.max(min, startVal + delta)));
 				setVar(varName, newVal);
 			};
 
-			let onMouseUp = () => {
-				document.removeEventListener("mousemove", onMouseMove);
-				document.removeEventListener("mouseup", onMouseUp);
+			let onUp = () => {
 				document.body.style.cursor = "";
 				document.body.style.userSelect = "";
+				document.removeEventListener("pointermove", onMove);
+				document.removeEventListener("pointerup", onUp);
 			};
 
 			document.body.style.cursor = isX ? "col-resize" : "row-resize";
 			document.body.style.userSelect = "none";
-			document.addEventListener("mousemove", onMouseMove);
-			document.addEventListener("mouseup", onMouseUp);
+			document.addEventListener("pointermove", onMove);
+			document.addEventListener("pointerup", onUp);
 		};
 
+//		onPointerEnter={e => e.target.style.background = "rgba(255,255,255,0.2)"}
+//		onPointerLeave={e => e.target.style.background = "rgba(255,255,255,0.08)"}
 		return [
 			<div key={`split-zone-${varName}`} style={handleStyle}>
 				<div
-					style={barStyle}
-					onMouseDown={onMouseDown}
-					onMouseEnter={e => e.target.style.background = "rgba(255,255,255,0.2)"}
-					onMouseLeave={e => e.target.style.background = "rgba(255,255,255,0.08)"}
+					style={barStyle} className={handleClass}
+					onPointerDown={onPointerDown}
 				/>
 			</div>
 		];
@@ -467,7 +468,7 @@ let FisheyeEffect = ({ containerRef, parsed, axis, intensity, minFr, stickyMode 
 			origSizes.map((s, i) => flexMask[i] ? frs[i].toFixed(4) + "fr" : s).join(" ");
 
 		let applyScales = (colFrs, rowFrs) => {
-			// pre-build area→position lookup from templateAreas
+			// pre-build area -> position lookup from templateAreas
 			let areaPos = {};
 			if (parsed.templateAreas) {
 				for (let r = 0; r < parsed.templateAreas.length; r++) {
@@ -506,7 +507,7 @@ let FisheyeEffect = ({ containerRef, parsed, axis, intensity, minFr, stickyMode 
 			}
 		};
 
-		let onMouseMove = (e) => {
+		let onMove = (e) => {
 			let rect = container.getBoundingClientRect();
 			if (raf) cancelAnimationFrame(raf);
 			raf = requestAnimationFrame(() => {
@@ -524,7 +525,7 @@ let FisheyeEffect = ({ containerRef, parsed, axis, intensity, minFr, stickyMode 
 			});
 		};
 
-		let onMouseLeave = () => {
+		let onLeave = () => {
 			if (stickyMode) return;
 			if (raf) cancelAnimationFrame(raf);
 			if (axis === "x" || axis === "both")
@@ -534,11 +535,12 @@ let FisheyeEffect = ({ containerRef, parsed, axis, intensity, minFr, stickyMode 
 			applyScales(Array(colSizes.length).fill(1), Array(rowSizes.length).fill(1));
 		};
 
-		container.addEventListener("mousemove", onMouseMove);
-		container.addEventListener("mouseleave", onMouseLeave);
+		container.style.touchAction = "none";
+		container.addEventListener("pointermove", onMove);
+		container.addEventListener("pointerleave", onLeave);
 		return () => {
-			container.removeEventListener("mousemove", onMouseMove);
-			container.removeEventListener("mouseleave", onMouseLeave);
+			container.removeEventListener("pointermove", onMove);
+			container.removeEventListener("pointerleave", onLeave);
 			if (raf) cancelAnimationFrame(raf);
 		};
 	}, [containerRef, parsed, axis, intensity, minFr, stickyMode]);
@@ -675,7 +677,7 @@ let Grid = ({ layout, col, gap, breaks, xs, sm, md, lg, xl,
 		[activeLayout, childCount],
 	);
 
-	// --- auto-flow → named areas when extensions need it ---
+	// --- auto-flow -> named areas when extensions need it ---
 	// if any extension declares needsAreas and the layout is auto-flow,
 	// generate synthetic templateAreas so gridArea works for both children and extension elements
 	let parsed = React.useMemo(() => {
@@ -760,7 +762,8 @@ let Grid = ({ layout, col, gap, breaks, xs, sm, md, lg, xl,
 		if (i >= parsed.areas.length) return child; // overflow children render without grid-area
 		let area = parsed.areas[i];
 		let origArea = parsed.originalAreas ? parsed.originalAreas[i] : area;
-		if (parsed.templateAreas && !parsed.templateAreas.some(t => t.includes(area))) {
+		if (parsed.templateAreas && !parsed.templateAreas.some(t => t.includes(area))
+			&& !(parsed.placementOverrides && parsed.placementOverrides[area])) {
 			i++;
 			return null;
 		}
@@ -841,22 +844,22 @@ let render = (opts) => ({
 // to close vertical gaps in an auto-flow grid.
 //
 // two sizing modes per item (auto-detected):
-//   1. aspect-ratio: item has --width/--height CSS vars → height from ratio
-//   2. measured: no vars → height from offsetHeight (content-sized)
+//   1. aspect-ratio: item has --width/--height CSS vars -> height from ratio
+//   2. measured: no vars -> height from offsetHeight (content-sized)
 //
 // transpose: layout string starting with | swaps axes — masonry packs
 // horizontally instead of vertically.
 //
 // usage:
-//   masonry()                  � regular masonry
-//   masonry({ balanced: true })   � balanced (reorder for min height)
+//   masonry()                   -> regular masonry
+//   masonry({ balanced: true }) -> balanced (reorder for min height)
 //
 // column sizing is controlled by the layout string via *-prefix:
 //   * 10 ?w | *200~#    ? repeat(auto-fill, minmax(200px, 1fr))
 //   * 10 ?w | *200~#*   ? repeat(auto-fit, minmax(200px, 1fr))
 //
 // opts:
-//   balanced   � reorder items within rows for minimal height (default: false)
+//   balanced   -> reorder items within rows for minimal height (default: false)
 
 let MasonryEffect = ({ containerRef, parsed, balanced }) => {
 	React.useEffect(() => {

@@ -62,6 +62,9 @@ Everything fits in one prop. The string has a simple grammar:
 | `abcdef \| 50 # *` | 6 columns, sizes cycle: 50px 1fr 50px 1fr ... |
 | `* 8 ?w \| *200~#` | Auto-fill: responsive columns, min 200px |
 | `* 8 ?w \| *200~#*` | Auto-fit: same but empty tracks collapse |
+| `iq ii. i[iq]q .qq` | Overlap: photo + quote share a cell via `[]` |
+| `iq ii. + .qq` | Same overlap via `+` layers |
+| `i[1:3,1:3] q[2:4,2:4]` | Same overlap via explicit line placement |
 
 ### Token vocabulary
 
@@ -77,6 +80,9 @@ Everything fits in one prop. The string has a simple grammar:
 | `?` | Flags (`?w` width, `?h` height, `?cC` center) |
 | `( )` | Per-area alignment — `a(cC)` centers area `a` |
 | `{ }` | Template variable — `{sidebar}` |
+| `[ ]` | Overlap cell — `[iq]` means both areas share that cell |
+| `+` | Layer separator — maps before/after are overlaid |
+| `a[1:3,1:3]` | Line placement — explicit `grid-column`/`grid-row` |
 | `0-9` | After area letter: repeat count (`h12` = 12 h's) |
 
 ### Flags — SECBAG
@@ -126,6 +132,42 @@ Uppercase letters in repeat rows are **pinned** — they span all repetitions:
   {items.map(i => <Card />)}
 </Grid>
 ```
+
+### Overlap
+
+Three syntaxes for areas that share grid cells. All compile to explicit `grid-column`/`grid-row` placement.
+
+**Bracket cells** — mark shared cells directly in the map:
+
+```jsx
+// image (i) and quote (q) overlap at [qi]
+<Grid layout="iq ii. i[qi]q .qq | 50 50 | 50 50">
+  <Photo />
+  <Quote />
+</Grid>
+```
+
+**Layer syntax** — draw each area's footprint separately, separated by `+`:
+
+```jsx
+// same result: layers are padded and overlaid automatically
+<Grid layout="iq . .qqq .qqq + ii ii | 50 50 | 50 50">
+  <Photo />
+  <Quote />
+</Grid>
+```
+
+**Line placement** — explicit CSS grid line numbers:
+
+```jsx
+// no map needed — each area placed by line numbers directly
+<Grid layout="i[1:3, 1:3, 1] q[2:4, 2:4] | 50 50 | 50 50 .">
+  <Photo />
+  <Quote />
+</Grid>
+```
+
+Line placement supports negative lines (`1:-1` = span full grid), z-index as a third param (`i[1:3,1:3,10]`), and alignment modifiers (`i(cC)[1:3,1:3]`).
 
 ## Component Props
 
@@ -224,8 +266,14 @@ layout    = ["|"] [legend] [map-rows] [gap] [?flags] ["|" cols ["|" rows]]
 legend    = "*" | "*"digit+ | "*"pattern | area-def+
 area-def  = letter [digit+] | LETTER [digit+]
           | letter"("mods")" | LETTER"("mods")"
+          | letter"["range","range"]"                  — line placement
+          | letter"["range","range","number"]"          — line placement with z-index
+          | letter"("mods")" "["range","range"]"        — line placement with alignment
 mods      = ("s"|"e"|"c"|"S"|"E"|"C")+
-map-row   = (letter [digit+] | LETTER | ".")+ ["*"]
+range     = number":"number                             — grid line start/end (1:3 ? 1 / 3)
+map-row   = (letter [digit+] | LETTER | "." | overlap)+ ["*"]
+overlap   = "[" letter letter+ "]"                      — shared cell: [iq] = i and q
+layer-sep = "+"                                         — overlay separator
 gap       = number [number]
 ?flags    = "?" ("w"|"h"|"f"|"F"|"s"|"e"|"c"|"b"|"a"|"g"|"S"|"E"|"C"|"B"|"A"|"G")+
 size      = "." | "#" | number | atom"~"atom | css-literal
@@ -243,6 +291,9 @@ Implicit rules:
   trailing "*" in sizes → cycle preceding tokens
   explicit # in sizes   → auto full-width/height
   ?secbag flags         → default track size becomes auto
+  "+" in map rows       → split into layers, pad, overlay
+  "[xy]" cells          → bounding rect ? grid-column/grid-row
+  separators            → whitespace (space, tab, newline) and commas
 ```
 
 ## Before & After

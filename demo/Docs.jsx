@@ -17,11 +17,11 @@ export default function Docs() {
 		<span style={{ color: "#888" }}>{desc}</span>
 	</div>;
 
-	return <Grid gap={16} style={{ padding: 8, overflow: "auto", width: "100%", height: "100%" }}>
+	return <Grid layout="16 | *520" style={{ padding: 8, overflow: "auto", width: "100%", height: "100%" }}>
 		<div style={{ maxWidth: 700, padding: "0 4px", lineHeight: 1.8 }}>
 			<Section title="Layout String Grammar">
 				<code style={{ color: "#c3e88d", display: "block", background: "#0f0f23", padding: 10, borderRadius: 4, marginBottom: 10, border: "1px solid #2a2a4a", lineHeight: 1.6 }}>
-					[<F>|</F>] [<K>legend</K> | <F>*</F> | <F>*N</F> | <F>*pattern</F>] [<K>rows</K>] [<F>gap</F> [<F>gap</F>]] [<F>?flags</F>] [<F>|</F> <K>col-sizes</K> [<F>|</F> <K>row-sizes</K>]]
+					[<F>|</F>] [<K>legend</K> | <F>*</F> | <F>*N</F> | <F>*pattern</F>] [<K>rows</K>] [<F>gap</F> [<F>gap</F>]] [<F>?flags</F>] [<K>placements</K>] [<F>|</F> <K>col-sizes</K> [<F>|</F> <K>row-sizes</K>]]
 				</code>
 			</Section>
 			<Section title="Map Tokens">
@@ -38,6 +38,10 @@ export default function Docs() {
 				<Ex code="ab*" desc="Repeat row — expands based on children" />
 				<Ex code="Ab*" desc="Uppercase in repeat row = pinned (shared, not numbered)" />
 				<Ex code="a~b" desc="minmax(a, b) — e.g. 200~# = minmax(200px, 1fr)" />
+				<Ex code="[iq]" desc="Overlap cell — i and q both occupy this cell (? placement overrides)" />
+				<Ex code="+" desc="Layer separator — overlay multiple maps, overlapping cells merge to [xy]" />
+				<Ex code="a[1:3,1:3]" desc="Placement override — grid-column: 1/3, grid-row: 1/3" />
+				<Ex code="a[1:3,1:3,10]" desc="Placement with z-index — third value = z-index" />
 				<Ex code="," desc="Optional separator (commas or spaces)" />
 				<Ex code="{var}" desc="Template variable — replaced from vars prop" />
 			</Section>
@@ -81,15 +85,36 @@ export default function Docs() {
 				<div style={{ color: "#555", marginTop: 2 }}>Transpose swaps justify↔align axes automatically.</div>
 			</Section>
 			<Section title="Per-Area Alignment">
-				<Ex code="a(s/e/c)" desc="justify-self: start / end / center" />
-				<Ex code="a(S/E/C)" desc="align-self: start / end / center" />
+				<Ex code="a(s/e/c/l)" desc="justify-self: start / end / center / baseline" />
+				<Ex code="a(S/E/C/L)" desc="align-self: start / end / center / baseline" />
 				<Ex code="a(cC)" desc="center both axes" />
+				<Ex code="a(eS)" desc="end justify + start align" />
+				<div style={{ color: "#555", marginTop: 4 }}>Works in legend: <C>a(cC)B(sE)</C> or on placements: <C>a(cC)[1:3,1:3]</C></div>
 				<div style={{ color: "#555", marginTop: 4 }}>Transpose swaps justify-self↔align-self.</div>
 			</Section>
 			<Section title="Proportional Columns">
 				<div style={{ color: "#888", marginBottom: 4 }}>Repeating area chars in map rows → columns default to 1fr (proportional)</div>
 				<Ex code="ab abb" desc="a=1fr b=2fr (b appears twice)" />
 				<Ex code="ab aab" desc="a=2fr b=1fr" />
+			</Section>
+			<Section title="Placement Overrides">
+				<div style={{ color: "#888", marginBottom: 4 }}>Line-based positioning — bypasses grid-template-areas, uses grid-column/row directly.</div>
+				<Ex code="i[1:3,1:3]" desc="i spans cols 1–3, rows 1–3" />
+				<Ex code="I[1:3,1:3]" desc="Uppercase = grow area (tracks ? 1fr)" />
+				<Ex code="i[1:3,1:3,10]" desc="Third value = z-index" />
+				<Ex code="i[1:-1,1:-1]" desc="Negative lines allowed (CSS grid line syntax)" />
+				<Ex code="i(cC)[1:3,1:3]" desc="Alignment modifiers on placement" />
+				<Ex code="q i[1:3,1:3] .qq .qq" desc="Mixed: i placed by lines, q by template-areas" />
+				<Ex code="i[1:3,1:3] q[2:4,2:4]" desc="Pure placement: no map, grid size inferred from lines" />
+			</Section>
+			<Section title="Overlap & Layers">
+				<div style={{ color: "#888", marginBottom: 4 }}>Two ways to overlap areas — both resolve to placement overrides.</div>
+				<Ex code="[iq]" desc="Bracket cell: i and q share this cell in the map" />
+				<Ex code="ii. i[iq]q .qq" desc="Direct overlap markup in map rows" />
+				<Ex code="ii. + .qq" desc="Layer separator: overlay two maps, merge overlapping cells" />
+				<Ex code="iq ii. ii. + ... .qq .qq" desc="Layers: i and q overlap in center ? placement overrides" />
+				<div style={{ color: "#555", marginTop: 4 }}>Overlap areas are extracted from the map and positioned via grid-column/row.</div>
+				<div style={{ color: "#555", marginTop: 2 }}>Non-overlapping layers merge normally without bracket cells.</div>
 			</Section>
 			<Section title="Grid Component Props">
 				<Ex code="layout" desc="Layout string" />
@@ -134,114 +159,269 @@ export default function Docs() {
 				<Ex code="* 8 ?w | * 200~#" desc="Auto-fill: responsive columns, min 200px each" />
 				<Ex code="* 8 ?w | * 200~# *" desc="Auto-fit: empty tracks collapse, items stretch" />
 				<Ex code="?whcC" desc="Center single child both axes" />
+				<Ex code="iq ii. i[iq]q .qq" desc="Overlap via bracket cells in map" />
+				<Ex code="iq ii. ii. + ... .qq .qq" desc="Overlap via + layer merge" />
+				<Ex code="i[1:3,1:3] q[2:4,2:4]" desc="Two overlapping areas via placement" />
 			</Section>
 		</div>
 		<Section title="Full Grammar & Rules">
 			<code><pre style={{ lineHeight: "14px", tabSize: 4 }}>{`
-	layout       = [transpose] [main] ["|" col-sizes ["|" row-sizes]]
+-- ═══════════════════════════════════════════════
+--  LAYOUT STRING GRAMMAR
+-- ═══════════════════════════════════════════════
 
-	transpose    = "|"
+layout       = [transpose] [main] ["|" col-sizes ["|" row-sizes]]
 
-	main         = [legend] [map-rows] [gap] [flags]
-				   -- (flags float freely among segments)
+transpose    = "|"                                -- prefix: swap cols ↔ rows
 
-	legend       = "*"                              -- auto-legend, single row
-				 | "*" digit+                       -- auto-flow grid with N columns
-				 | "*" pattern                      -- auto-flow with span pattern
-				 | area-def+
 
-	pattern      = (letter digit* | "*" digit*)+    -- e.g. s3c6a3, w2*2
+-- ───────────────────────────────────────────────
+--  MAIN SEGMENT
+-- ───────────────────────────────────────────────
 
-	area-def     = letter | LETTER
-				 | letter "(" modifiers ")"
-				 | LETTER "(" modifiers ")"
+main         = [legend] [map-rows] [gap] [flags] [placements]
+			-- segments separated by whitespace or commas (interchangeable)
+			-- flags and placements float freely among segments
 
-	modifiers    = self-mod+
-	self-mod     = "s" | "e" | "c"                  -- justify-self: start/end/center
-				 | "S" | "E" | "C"                  -- align-self: start/end/center
+legend       = area-def+                          -- named areas
+			| "*"                                -- auto-legend, single row
+			| "*" digit+                         -- auto-flow with N columns
+			| "*" pattern                        -- auto-flow with span pattern
 
-	map-rows     = map-row+
-	map-row      = cell+
-				 | cell+ "*"                         -- repeat row (varargs)
+area-def     = letter ["(" self-mods ")"]         -- lowercase = normal area
+			| LETTER ["(" self-mods ")"]         -- uppercase = grow area (tracks → 1fr)
 
-	cell         = letter                            -- area reference
-				 | letter digit+                     -- char-count: h12 = hhhhhhhhhhhh
-				 | LETTER                            -- pinned area in repeat row
-				 | "."                               -- empty cell
+pattern      = (letter digit* | "*" digit*)+     -- e.g. s3c6a3, w2*2
+			-- letter = named span, digit = span width, * = unnamed singles
+			-- total column count = sum of all spans
 
-	gap          = number                            -- uniform gap (px)
-				 | number number                     -- row-gap col-gap (px)
 
-	flags        = "?" flag-char+
-	flag-char    = "w"                               -- full width
-				 | "h"                               -- full height
-				 | "f"                               -- reverse auto-flow (row↔column)
-				 | "F"                               -- dense packing (auto-flow only)
-				 | "s" | "e" | "c" | "b" | "a" | "g"    -- justify-content
-				 | "S" | "E" | "C" | "B" | "A" | "G"    -- align-content
+-- ───────────────────────────────────────────────
+--  MAP ROWS
+-- ───────────────────────────────────────────────
 
-	col-sizes    = ["*"] size-token+ ["*"]
-	row-sizes    = ["*"] size-token+ ["*"]
+map-rows     = map-row+ ["+" map-row+]*          -- "+" separates overlay layers
 
-	size-token   = "."                               -- auto
-				 | "#"                               -- 1fr
-				 | number                            -- px
-				 | size-atom "~" size-atom            -- minmax(a, b)
-				 | css-size                           -- literal passthrough
+map-row      = cell+                             -- regular row
+			| cell+ "*"                          -- repeat row (exactly one allowed)
 
-	size-atom    = "." | "#" | number | css-size
+cell         = letter                            -- area reference (lowercase)
+			| LETTER                            -- pinned area in repeat row
+			| letter digit+                     -- char-count: h12 → hhhhhhhhhhhh
+			| "."                               -- empty cell
+			| "[" letter+ "]"                   -- overlap cell: [iq] = i and q share this cell
 
-	-- trailing "*" in sizes: cycle preceding tokens to fill track count
-	--   "80 # *" with 6 cols → 80px 1fr 80px 1fr 80px 1fr
-	-- leading "*" in sizes: repeat(auto-fill, ...)
-	--   "* 200~#" ? repeat(auto-fill, minmax(200px, 1fr))
-	-- leading + trailing "*": repeat(auto-fit, ...)
-	--   "* 200~# *" ? repeat(auto-fit, minmax(200px, 1fr))
-	-- auto-fill/fit implies full width (or height when transposed)
+			-- char-count expands before parsing: a2b3 → aabbb
+			-- "." in map = empty, in sizes = auto, as size-atom = auto
 
-	number       = digit+ ["." digit+]
-	letter       = "a"-"z"
-	LETTER       = "A"-"Z"
-	css-size     = <any non-whitespace not matching above>
 
-	-- separators: whitespace and commas interchangeable, commas optional
-	-- size tokens: "." and "#" need no surrounding spaces
-	-- size tokens: "~" binds adjacent tokens (200~# = minmax(200px, 1fr))
+-- ───────────────────────────────────────────────
+--  GAP
+-- ───────────────────────────────────────────────
 
-	-- implicit rules:
-	--   legend only, no map rows       → legend doubles as single-row map
-	--   empty input + childCount       → "*"
-	--   "|" + empty + childCount       → transposed "*"
-	--   all-numeric segments           → gap only, prepend "*" if childCount > 0
-	--   *N + childCount                → auto-flow: no grid-template-areas,
-	--                                    uses grid-auto-flow instead
-	--   justify/alignContent flags     → default track size becomes auto (not 1fr)
-	--                                    so centering works as expected
+gap          = number                            -- uniform gap (px)
+			| number number                     -- row-gap col-gap (px)
 
-	-- transpose ("|" prefix):
-	--   swaps columns ↔ rows (template areas, sizes, counts)
-	--   swaps justify-self ↔ align-self on all areas
-	--   swaps justifyContent ↔ alignContent in flags
-	--   swaps gapH ↔ gapV
-	--   flips auto-flow direction (row → column)
-	--   fisheye extension auto-swaps its axis
+			-- gap segments are trailing numbers after map rows
+			-- if all segments are numeric + childCount > 0 → auto-flow with gap
 
-	-- auto-flow details:
-	--   *N generates area names c0, c1, c2, ...
-	--   *pattern generates named areas from pattern letters
-	--   ?f reverses flow direction (row↔column)
-	--   ?F adds dense packing
-	--   extensions with needsAreas force template-areas generation
-	--     so grid-area works for both children and extension elements
 
-	-- var substitution (pre-parser, in Grid component):
-	--   "{" identifier "}" replaced from vars prop before parsing
+-- ───────────────────────────────────────────────
+--  FLAGS (container-level)
+-- ───────────────────────────────────────────────
 
-	-- repeat row expansion (post-parse):
-	--   row ending with "*" = repeat row (max one per layout)
-	--   lowercase in repeat row → numbered: a→a1,a2,... b→b1,b2,...
-	--   UPPERCASE in repeat row → pinned: shared across all repetitions
-	--   repeat count = ceil((childCount - staticAreaCount) / repeatAreasPerRow)
+flags        = "?" flag-char+                    -- float freely in layout string
+
+flag-char    = "w"                               -- width: 100%
+			| "h"                               -- height: 100%
+			| "f"                               -- reverse auto-flow (row↔column)
+			| "F"                               -- dense packing (grid-auto-flow: dense)
+			| "s" | "e" | "c" | "b" | "a" | "g" -- justify-content (lowercase)
+			| "S" | "E" | "C" | "B" | "A" | "G" -- align-content (uppercase)
+
+			-- SECBAG mnemonic:
+			--   s/S = start, e/E = end, c/C = center,
+			--   b/B = space-between, a/A = space-around, g/G = space-evenly
+
+
+-- ───────────────────────────────────────────────
+--  PER-AREA ALIGNMENT (in legend or placement)
+-- ───────────────────────────────────────────────
+
+self-mods    = self-mod+
+
+self-mod     = "s" | "e" | "c" | "l"            -- justify-self (lowercase)
+			| "S" | "E" | "C" | "L"            -- align-self (uppercase)
+
+			-- s/S = start, e/E = end, c/C = center, l/L = baseline
+			-- e.g. a(cC) = center both axes, a(eS) = end justify + start align
+
+
+-- ───────────────────────────────────────────────
+--  PLACEMENT OVERRIDES (line-based positioning)
+-- ───────────────────────────────────────────────
+
+placements   = placement+                        -- float freely among segments
+
+placement    = letter ["(" self-mods ")"] "[" coords "]"
+			| LETTER ["(" self-mods ")"] "[" coords "]"
+
+coords       = col "," row                      -- grid-column, grid-row
+			| col "," row "," z-index           -- + z-index (integer)
+
+col          = line-spec                         -- e.g. 1:3 → gridColumn: 1 / 3
+row          = line-spec                         -- e.g. 2:4 → gridRow: 2 / 4
+line-spec    = number [":" number]               -- start[:end], negative lines allowed
+z-index      = number                            -- integer z-index
+
+			-- uppercase letter = grow area, same as in legend
+			-- placement areas skip grid-template-areas, use grid-column/grid-row
+			-- can coexist with area-map areas in the same layout
+			-- pure-placement layouts (no legend/map) infer grid size from max lines
+			-- ":" in line-spec becomes " / " in CSS: 1:3 → "1 / 3"
+
+
+-- ───────────────────────────────────────────────
+--  PIPE SIZES (column and row tracks)
+-- ───────────────────────────────────────────────
+
+col-sizes    = ["*"] size-token+ ["*"]
+row-sizes    = ["*"] size-token+ ["*"]
+
+size-token   = "."                               -- auto
+			| "#"                               -- 1fr
+			| number                            -- px
+			| size-atom "~" size-atom            -- minmax(a, b)
+			| css-size                           -- literal passthrough (e.g. 20vw, 3em)
+			| "*"                               -- trailing: cycle pattern / leading: auto-fill
+
+size-atom    = "." | "#" | number | css-size
+
+			-- "~" binds tightly: 200~# = minmax(200px, 1fr), .~# = minmax(auto, 1fr)
+			-- "." and "#" need no surrounding whitespace in sizes
+
+			-- trailing "*": cycle preceding tokens to fill all tracks
+			--   "80 # *" with 6 cols → 80px 1fr 80px 1fr 80px 1fr
+			--   works on both col-sizes and row-sizes independently
+
+			-- leading "*": repeat(auto-fill, ...)
+			--   "* 200~#" → repeat(auto-fill, minmax(200px, 1fr))
+			--   implies full width (or height when transposed)
+
+			-- leading + trailing "*": repeat(auto-fit, ...)
+			--   "* 200~# *" → repeat(auto-fit, minmax(200px, 1fr))
+			--   empty tracks collapse, items stretch to fill
+
+			-- without trailing *, remaining tracks pad with:
+			--   auto-flow mode → 1fr (or auto if justify/alignContent set)
+			--   area-map mode → auto
+			-- excess sizes are truncated to track count
+
+			-- skip col-sizes with empty pipe: || row-sizes
+			--   "*3 || 40 80 *" → 3 cols (default), rows cycle 40 80
+
+
+-- ───────────────────────────────────────────────
+--  TERMINALS
+-- ───────────────────────────────────────────────
+
+number       = digit+ ["." digit+]               -- integer or decimal
+letter       = "a"-"z"
+LETTER       = "A"-"Z"
+css-size     = <any non-whitespace not matching above>
+			-- passed through as literal CSS value
+
+
+-- ═══════════════════════════════════════════════
+--  SEMANTIC RULES
+-- ═══════════════════════════════════════════════
+
+
+-- ─── implicit coercions ────────────────────────
+
+--   legend only, no map rows       → legend doubles as single-row map
+--   empty input + childCount       → "*" (auto h-stack)
+--   "|" + empty + childCount       → transposed "*" (auto v-stack)
+--   all-numeric segments + children → gap only, auto-flow prepended
+--   grow areas (UPPERCASE in legend) → column/row tracks become 1fr
+--   explicit fr in pipe sizes      → implies full width/height
+--   grow areas present             → implies full width (100%)
+
+
+-- ─── transpose ("|" prefix) ────────────────────
+
+--   swaps columns ↔ rows in template areas
+--   swaps col-sizes ↔ row-sizes
+--   swaps colCount ↔ rowCount
+--   swaps justify-self ↔ align-self on all areas
+--   swaps justifyContent ↔ alignContent flags
+--   swaps gapH ↔ gapV
+--   flips auto-flow direction (row → column)
+--   fisheye extension auto-swaps its axis
+
+
+-- ─── auto-flow details ─────────────────────────
+
+--   * or *N → no grid-template-areas, uses grid-auto-flow
+--   *N generates area names c0, c1, c2, ...
+--   *pattern → named areas from letters, unnamed from *
+--     *s3c6a3 = 12-col grid, children cycle spans 3/6/3
+--     *w2*2 = 4-col grid, w spans 2 + 2 unnamed singles
+--   ?f reverses flow direction (row ↔ column)
+--   ?F adds dense packing (grid-auto-flow: ... dense)
+--   mixed mode: static rows before *, dynamic after
+--     h12 *s3c6a3 = 12-col header row + auto-flow body
+--   extensions with needsAreas force template-areas generation
+
+
+-- ─── repeat row expansion ──────────────────────
+
+--   row ending with "*" = repeat row (max one per layout)
+--   lowercase letters in repeat row → numbered per repetition
+--     ab* with 4 dynamic children → a1 b1 a2 b2
+--   UPPERCASE letters in repeat row → pinned (shared across all copies)
+--     Sa* → s column shared, a numbered: s a1, s a2, ...
+--   repeat count = ceil((childCount − staticAreaCount) / repeatAreasPerRow)
+--   row sizes for repeat row: duplicated per copy, or cycled with trailing *
+
+
+-- ─── overlay / overlap (layers and brackets) ───
+
+--   "+" between map rows splits into layers
+--     layers are padded to same dimensions, then overlaid
+--     overlapping cells become [xy] bracket groups
+--   [xy] cells in map rows (direct or from + merge):
+--     each letter's bounding rectangle → placement override
+--     areas removed from template-areas map (replaced with ".")
+--     placement via grid-column/grid-row (line-based)
+--   non-overlapping layers merge normally (no brackets)
+
+
+-- ─── var substitution ──────────────────────────
+
+--   "{" identifier "}" replaced from vars prop before parsing
+--   handled by Grid component, not by parser
+--   enables dynamic layouts via splitPane, collapsible, etc.
+
+
+-- ─── proportional columns ──────────────────────
+
+--   when area chars repeat in map rows without explicit col-sizes:
+--     all columns default to 1fr (proportional mode)
+--   ab abb → a=1fr, b=2fr (b appears twice in row)
+--   grow areas (UPPERCASE) make their tracks 1fr regardless
+
+
+-- ─── error conditions ──────────────────────────
+
+--   duplicate area in legend (e.g. "aa")
+--   unknown area char in map not present in legend
+--   row length mismatch across map rows
+--   non-rectangular area shape in map
+--   * or repeat row without childCount
+--   more than one repeat row per layout
+--   unclosed "(" in legend modifiers
+--   overlap area [xy] not rectangular in bounding rect
 			`}</pre></code>
 		</Section>
 	</Grid>
