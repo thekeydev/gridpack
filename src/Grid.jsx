@@ -759,6 +759,11 @@ let Grid = ({ layout, col, gap, breaks, xs, sm, md, lg, xl,
 
 	// assign children to areas
 	let i = 0;
+	let extNeedsWrapper = extensions.some(ext => ext.needsWrapper);
+	let cellWrapper = null;
+	for (let ext of extensions) {
+		if (ext.wrapCell) { cellWrapper = ext.wrapCell; break; }
+	}
 	let mappedChildren = childArray.map((child,childIdx) => {
 		if (i >= parsed.areas.length) return child; // overflow children render without grid-area
 		let area = parsed.areas[i];
@@ -791,19 +796,16 @@ let Grid = ({ layout, col, gap, breaks, xs, sm, md, lg, xl,
 				}
 			}
 		}
-		// find cell wrapper from extensions
-		let cellWrapper = null;
-		for (let ext of extensions) {
-			if (ext.wrapCell) { cellWrapper = ext.wrapCell; break; }
-		}
 
 		if (cellWrapper) return cellWrapper(child, areaStyle, area + "-" + i++, childIdx, parsed);
 		if (!isArea(child)) return child;
 		let key = area + "-" + i++;
 		// inject grid styles directly onto DOM elements — no wrapper div needed
+		// extensions that mutate item DOM (masonry) need wrappers
 		// alignment (justifySelf/alignSelf) may need a wrapper to isolate from child sizing
-//		if (typeof child.type === "string" && !areaStyle.justifySelf && !areaStyle.alignSelf)
-		if (typeof child.type === "string" || nodivs)
+//		let needsWrap = extNeedsWrapper || nodivs || areaStyle.justifySelf || areaStyle.alignSelf;
+		let needsWrap = extNeedsWrapper || nodivs;
+		if (typeof child.type === "string" && !needsWrap)
 			return React.cloneElement(child, { key, style: { ...child.props.style, ...areaStyle } });
 		return <div key={key} style={areaStyle}>{child}</div>;
 	});
@@ -1136,6 +1138,7 @@ let masonry = (opts = {}) => {
 	let { balanced = false } = opts;
 	return {
 		name: "masonry",
+		needsWrapper: true,
 		render: ({ containerRef, parsed }) => [
 			<MasonryEffect key="masonry-effect" containerRef={containerRef}
 				parsed={parsed} balanced={balanced} />,
