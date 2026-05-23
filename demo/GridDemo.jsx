@@ -616,51 +616,51 @@ let presets = [
 		guide: "Semantic HTML via the `render` extension. The `cell` callback picks `<dt>` or `<dd>` based on column index, and the `container` callback wraps everything in a `<dl>`. Grid layout logic stays the same — only the DOM output changes.",
 		tryThis: ["This renders as a proper `<dl>` definition list", "The cell callback decides the tag per column"] },
 
-		// --- overlap ---
-		{ cat: "Overlap", name: "Testimonial Card", layout: "iq ii. i[qi]q .qq | 50 50 | 50 50", w: 500, h: 280,
-			children: () => [
-				<div key="photo" style={{
-					width: "100%", height: "100%",
-					background: "linear-gradient(135deg, #3a1e5f, #2a3a6f)",
-					borderRadius: "50%", border: "3px solid #c792ea",
-					display: "flex", alignItems: "center", justifyContent: "center",
-					fontSize: 32, color: "#c792ea", zIndex: 2,
-				}}>👤</div>,
-				<div key="quote" style={{
-					background: "#1a1a2e", borderRadius: 12, padding: 16, paddingLeft: 50,
-					color: "#ccc", fontSize: 13, lineHeight: 1.6,
-					display: "flex", flexDirection: "column", justifyContent: "center",
-				}}>
-					<span style={{ color: "#f78c6c", fontSize: 28, fontFamily: "serif" }}>"</span>
-					Lorem ipsum dolor sit amet consectetur. Sagittis nisi feugiat eros urna vestibulum cras iaculis odio.
-					<span style={{ color: "#7fdbca", marginTop: 12, fontSize: 12 }}>– Jane L. Student</span>
-				</div>,
-			],
-			src: '<Grid layout="iq ii. i[qi]q .qq | 50 50 | 50 50">\n\t<Photo/>\n\t<Quote/>\n</Grid>',
-			guide: "**Overlap** via `[]` bracket cells. The `[iq]` cell marks where the photo (`i`) and quote (`q`) share a grid cell. Each area's bounding rectangle is computed and converted to explicit `grid-column`/`grid-row` placement.\n\nThis layout was impossible before — `grid-template-areas` doesn't allow two areas in one cell.",
-			tryThis: ["The photo spans rows 1-2, cols 1-2", "The quote spans rows 2-3, cols 2-4", "They overlap at row 2, col 2"] },
-		{ cat: "Overlap", name: "Testimonial (+ layers)", layout: "iq . .qqq .qqq + ii ii | 50 50 | 50 50", w: 500, h: 280,
-			children: () => [
-				<div key="photo" style={{
-					width: "100%", height: "100%",
-					background: "linear-gradient(135deg, #3a1e5f, #2a3a6f)",
-					borderRadius: "50%", border: "3px solid #c792ea",
-					display: "flex", alignItems: "center", justifyContent: "center",
-					fontSize: 32, color: "#c792ea", zIndex: 2,
-				}}>👤</div>,
-				<div key="quote" style={{
-					background: "#1a1a2e", borderRadius: 12, padding: 16, paddingLeft: 50,
-					color: "#ccc", fontSize: 13, lineHeight: 1.6,
-					display: "flex", flexDirection: "column", justifyContent: "center",
-				}}>
-					<span style={{ color: "#f78c6c", fontSize: 28, fontFamily: "serif" }}>"</span>
-					Lorem ipsum dolor sit amet consectetur. Sagittis nisi feugiat eros urna vestibulum cras iaculis odio.
-					<span style={{ color: "#7fdbca", marginTop: 12, fontSize: 12 }}>– Jane L. Student</span>
-				</div>,
-			],
-			src: '<Grid layout="iq . .qqq .qqq + ii ii | 50 50 | 50 50">\n\t<Photo/>\n\t<Quote/>\n</Grid>',
-			guide: "Same testimonial card, but using **`+` layer syntax** instead of `[]` cells. Each layer is a separate grid map — the parser pads them to the same dimensions and overlays them. Where both layers have an area in the same cell, a `[xy]` bracket is auto-generated.\n\nSame output, different authoring style — layers are more visual for complex overlaps.",
-			tryThis: ["Compare with the [] version above", "Each layer shows one area's footprint clearly", "The `+` splits the two layers"] },
+	// --- overlap ---
+	{ cat: "Overlap", name: "Testimonial Card", layout: "iq ii. i[qi]q .qq | 50 50 | 50 50", w: 500, h: 280,
+		children: () => [
+			<div key="photo" style={{
+				width: "100%", height: "100%",
+				background: "linear-gradient(135deg, #3a1e5f, #2a3a6f)",
+				borderRadius: "50%", border: "3px solid #c792ea",
+				display: "flex", alignItems: "center", justifyContent: "center",
+				fontSize: 32, color: "#c792ea", zIndex: 2,
+			}}>👤</div>,
+			<div key="quote" style={{
+				background: "#1a1a2e", borderRadius: 12, padding: 16, paddingLeft: 50,
+				color: "#ccc", fontSize: 13, lineHeight: 1.6,
+				display: "flex", flexDirection: "column", justifyContent: "center",
+			}}>
+				<span style={{ color: "#f78c6c", fontSize: 28, fontFamily: "serif" }}>"</span>
+				Lorem ipsum dolor sit amet consectetur. Sagittis nisi feugiat eros urna vestibulum cras iaculis odio.
+				<span style={{ color: "#7fdbca", marginTop: 12, fontSize: 12 }}>– Jane L. Student</span>
+			</div>,
+		],
+		src: '<Grid layout="iq ii. i[qi]q .qq | 50 50 | 50 50">\n\t<Photo/>\n\t<Quote/>\n</Grid>',
+		guide: "**Overlap** via `[]` bracket cells. The `[iq]` cell marks where the photo (`i`) and quote (`q`) share a grid cell. Each area's bounding rectangle is computed and converted to explicit `grid-column`/`grid-row` placement.\n\nThis layout was impossible before — `grid-template-areas` doesn't allow two areas in one cell.",
+		tryThis: ["The photo spans rows 1-2, cols 1-2", "The quote spans rows 2-3, cols 2-4", "They overlap at row 2, col 2"] },
+	{ cat: "Overlap", name: "Testimonial (+ layers)", layout: "iq . .qqq .qqq + ii ii | 50 50 | 50 50", w: 500, h: 280,
+		children: () => [
+			<div key="photo" style={{
+				width: "100%", height: "100%",
+				background: "linear-gradient(135deg, #3a1e5f, #2a3a6f)",
+				borderRadius: "50%", border: "3px solid #c792ea",
+				display: "flex", alignItems: "center", justifyContent: "center",
+				fontSize: 32, color: "#c792ea", zIndex: 2,
+			}}>👤</div>,
+			<div key="quote" style={{
+				background: "#1a1a2e", borderRadius: 12, padding: 16, paddingLeft: 50,
+				color: "#ccc", fontSize: 13, lineHeight: 1.6,
+				display: "flex", flexDirection: "column", justifyContent: "center",
+			}}>
+				<span style={{ color: "#f78c6c", fontSize: 28, fontFamily: "serif" }}>"</span>
+				Lorem ipsum dolor sit amet consectetur. Sagittis nisi feugiat eros urna vestibulum cras iaculis odio.
+				<span style={{ color: "#7fdbca", marginTop: 12, fontSize: 12 }}>– Jane L. Student</span>
+			</div>,
+		],
+		src: '<Grid layout="iq . .qqq .qqq + ii ii | 50 50 | 50 50">\n\t<Photo/>\n\t<Quote/>\n</Grid>',
+		guide: "Same testimonial card, but using **`+` layer syntax** instead of `[]` cells. Each layer is a separate grid map — the parser pads them to the same dimensions and overlays them. Where both layers have an area in the same cell, a `[xy]` bracket is auto-generated.\n\nSame output, different authoring style — layers are more visual for complex overlaps.",
+		tryThis: ["Compare with the [] version above", "Each layer shows one area's footprint clearly", "The `+` splits the two layers"] },
 	{ cat: "Overlap", name: "Line Placement", layout: "i[1:3, 1:3, 1] q[2:4, 2:4] | 50 50 | 50 50 .", w: 400, h: 280,
 		children: () => [
 			<div key="photo" style={{
@@ -683,7 +683,7 @@ let presets = [
 		src: '<Grid layout="i[1:3, 1:3, 1] q[2:4, 2:4] | 50 50 | 50 50 .">\n\t<Photo/>\n\t<Quote/>\n</Grid>',
 		guide: "**Direct line placement** with `[col,row]` syntax. No area map at all — each area gets explicit `grid-column` and `grid-row` values. `1:3` becomes `1 / 3` in CSS.\n\nSupports negative lines (`-1` = last), z-index as third param (`[1:3,1:3,10]`), and alignment modifiers (`i(cC)[1:3,1:3]`).",
 		tryThis: ["Try `i[1:3,1:3,10]` to add z-index", "Try `i(cC)[1:3,1:3]` to center the photo", "Negative lines work: `i[1:-1,1:-1]` spans full grid"] },
-	{ cat: "Overlap", name: "Callout Card", layout: "qit qqq.. qqq.. qqq.. + ..iii ..iii ..iii + ..... ..... ttttt | # # # # # | # # #", w: 550, h: 220,
+	{ cat: "Overlap", name: "Callout Card", layout: "qit ... qqq qqq + ..iii ..iii ttt | {o}#{o}#{o} | {o}#{o}", w: 550, h: 220,
 		children: () => [
 			<div key="content" style={{
 				background: "#1a1a2e", borderRadius: 8, padding: "20px 24px",
@@ -710,7 +710,8 @@ let presets = [
 				borderRadius: 2, alignSelf: "end", height: 4,
 			}} />,
 		],
-		src: '<Grid layout="qit\n\tqqq.. qqq.. qqq..\n\t+ ..iii ..iii ..iii\n\t+ ..... ..... ttttt\n\t| # # # # # | # # #">\n\t<Content/>\n\t<Image/>\n\t<Accent/>\n</Grid>',
+		params: [{ key: "o", label: "off", type: "range", min: 0, max: 100, def: 25 }],
+		src: '<Grid layout="qit\n\t..iii ..iii ttt\n\t+ ... qqq.. qqq\n\t| 25 # 25 # 25 | 25 # 25">\n\t<Content/>\n\t<Image/>\n\t<Accent/>\n</Grid>',
 		guide: "A complex **three-layer overlap**. Content panel (`q`) spans the left 3 cols, image (`i`) spans the right 3 cols, accent bar (`t`) sits at the bottom across all 5 cols. Each layer is drawn separately with `+`, and the parser auto-detects where they overlap.\n\nAll three areas get explicit `grid-column`/`grid-row` placement — the normal template-areas map becomes all dots.",
 		tryThis: ["Three layers separated by `+`", "q and i overlap in the middle column", "t overlaps with both at the bottom row"] },
 ];
@@ -1039,7 +1040,7 @@ let MobilePlayground = () => {
 			{/* --- preview (fixed height, draggable) --- */}
 			<div style={{ padding: 12, paddingBottom: 16, width: "100%", height: "100%", overflow: "auto", position: "relative" }}>
 				<Grid layout={s.layout} vars={s.allVars} onVarsChange={s.setVars} extensions={s.extensions}
-					style={{ ...(s.preset.gridStyle || {}) }}
+					style={{ ...(s.preset.gridStyle || {}) }} //nodivs
 					{...s.responsiveProps}>
 					{s.children}
 				</Grid>
@@ -1195,7 +1196,11 @@ export default function App() {
 				background: #13131f; color: #ccc;
 			}
 			.app > * { min-width: 0; }
-			.demo-box { border-radius: 6px; padding: 8px 16px; font-size: 12px; font-weight: 600; display: flex; align-items: center; justify-content: center; min-height: 0px; height: 100%; width: 100%; }
+			.demo-box { border-radius: 6px; padding: 8px 16px; font-size: 12px; font-weight: 600; display: flex; align-items: center; justify-content: center; min-height: 0px;
+			/*
+			*/
+			height: 100%; width: 100%;
+			}
 			.c0 { background: #1e3a5f; color: #7fdbca; border: 1px solid #2a5a8f; }
 			.c1 { background: #3a1e5f; color: #c792ea; border: 1px solid #5a2a8f; }
 			.c2 { background: #1e5f3a; color: #c3e88d; border: 1px solid #2a8f5a; }

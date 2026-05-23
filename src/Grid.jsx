@@ -617,6 +617,7 @@ let tabs = (opts) => ({
 
 let Grid = ({ layout, col, gap, breaks, xs, sm, md, lg, xl,
 	vars: varsProp, onVarsChange, extensions = [],
+	nodivs = false,
 	className, style, children, ...rest
 }) => {
 	// --- internal vars state (used when uncontrolled) ---
@@ -797,7 +798,14 @@ let Grid = ({ layout, col, gap, breaks, xs, sm, md, lg, xl,
 		}
 
 		if (cellWrapper) return cellWrapper(child, areaStyle, area + "-" + i++, childIdx, parsed);
-		return isArea(child) ? <div key={area + "-" + i++} style={areaStyle}>{child}</div> : child;
+		if (!isArea(child)) return child;
+		let key = area + "-" + i++;
+		// inject grid styles directly onto DOM elements — no wrapper div needed
+		// alignment (justifySelf/alignSelf) may need a wrapper to isolate from child sizing
+//		if (typeof child.type === "string" && !areaStyle.justifySelf && !areaStyle.alignSelf)
+		if (typeof child.type === "string" || nodivs)
+			return React.cloneElement(child, { key, style: { ...child.props.style, ...areaStyle } });
+		return <div key={key} style={areaStyle}>{child}</div>;
 	});
 
 	// --- render extension elements ---
