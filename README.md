@@ -65,6 +65,8 @@ Everything fits in one prop. The string has a simple grammar:
 | `iq ii. i[iq]q .qq` | Overlap: photo + quote share a cell via `[]` |
 | `iq ii. + .qq` | Same overlap via `+` layers |
 | `i[1:3,1:3] q[2:4,2:4]` | Same overlap via explicit line placement |
+| `abc 8 ?x` | Flex row — same DSL, `display: flex` output |
+| `* 8 ?w ?W \| 120~200*` | Flex wrap — last row auto-centers (impossible in grid) |
 
 ### Token vocabulary
 
@@ -78,7 +80,7 @@ Everything fits in one prop. The string has a simple grammar:
 | `~` | `minmax(a, b)` — e.g. `200~#` |
 | `*` | Auto-legend / repeat row / size cycling / auto-fill prefix |
 | `?` | Flags (`?w` width, `?h` height, `?cC` center) |
-| `( )` | Per-area alignment — `a(cC)` centers area `a` |
+| `( )` | Per-area modifiers — `a(cC)` align, `a(z5)` z-index, `a(.hero)` className, `a(=sidebar)` alias, `a(200!)` flex-basis |
 | `{ }` | Template variable — `{sidebar}` |
 | `[ ]` | Overlap cell — `[iq]` means both areas share that cell |
 | `+` | Layer separator — maps before/after are overlaid |
@@ -93,6 +95,8 @@ Lowercase = `justify-content`, uppercase = `align-content`:
 - `?w` / `?h` — force full width / height
 - `?f` — reverse auto-flow direction (row → column)
 - `?F` — dense packing (`grid-auto-flow: dense`)
+- `?x` — flex mode (`display: flex` instead of grid)
+- `?W` — flex-wrap: wrap (also switches to flex mode)
 
 ### Sizes and auto-fill
 
@@ -110,6 +114,41 @@ When you write explicit `#` (1fr) in the pipe sizes section, the grid automatica
 ```
 
 A trailing `*` in sizes cycles the pattern: `| 50 # *` with 6 columns becomes `50px 1fr 50px 1fr 50px 1fr`.
+
+## Flex Mode
+
+`<Flex>` emits `display: flex` using the same DSL. Use it when flex's content-negotiation fits better than grid tracks, or when you need `flex-wrap` (which solves the CSS grid last-row centering problem).
+
+```jsx
+import { Grid, Flex } from "gridpack";
+
+// Flex row — same DSL, different CSS model
+<Flex layout="abc 8">
+  <A /> <B /> <C />
+</Flex>
+
+// Wrapping — last row auto-centers (impossible with grid)
+<Flex layout="* 8 ?w ?W | *140~200">
+  {cards.map(c => <Card />)}
+</Flex>
+
+// Or use ?x / ?W flags directly on <Grid>
+<Grid layout="abc 8 ?x">...</Grid>
+<Grid layout="* 8 ?w ?W | *140~200">...</Grid>
+```
+
+In flex mode:
+- Uppercase letters = `flex-grow: 1` (same semantics as grid grow areas)
+- `|` prefix = `flex-direction: column`
+- Pipe sizes set `flex-basis` per item: `#`/`1fr` = grow, `2fr` = grow × 2, `minmax(a,b)` = basis `a` + max-width `b`
+- Per-area `( )` modifiers accept `200` (flex-basis), `200!` (no-shrink), `200/2` (custom shrink)
+
+The `<Layout>` component uses `mode="auto"`: flex when `?W`/`?x` flags are present, grid otherwise.
+
+```jsx
+import { Layout } from "gridpack";
+<Layout d="abc 8 ?x">...</Layout>
+```
 
 ### Repeat rows
 
@@ -169,6 +208,46 @@ Three syntaxes for areas that share grid cells. All compile to explicit `grid-co
 
 Line placement supports negative lines (`1:-1` = span full grid), z-index as a third param (`i[1:3,1:3,10]`), and alignment modifiers (`i(cC)[1:3,1:3]`).
 
+### Per-area modifiers `()`
+
+The `( )` syntax attaches modifiers to any area. All types compose freely, separated by whitespace or commas. `.` and `=` are self-delimiting.
+
+| Modifier | Syntax | Effect |
+|----------|--------|--------|
+| Alignment | `s e c l` / `S E C L` | justify-self / align-self (start end center baseline) |
+| z-index | `z5` | `z-index: 5` on wrapper |
+| className | `.hero` | adds CSS class (chainable: `.foo.bar`) |
+| alias | `=sidebar` | `data-area="sidebar"` on wrapper |
+| flex-basis | `200` | `flex-basis: 200px` (flex mode) |
+| no-shrink | `200!` | basis + `flex-shrink: 0` |
+| custom shrink | `200/2` | basis + `flex-shrink: 2` |
+
+```
+a(cC)           — center both axes
+a(z5 .card)     — z-index 5, class "card"
+a(=sidebar)     — data-area="sidebar"
+a(200! .panel)  — flex-basis 200px, no-shrink, class "panel"
+a(eC z3 .hero)  — all combined
+```
+
+Works in: legend (`a(z5)B(sE)`), placement overrides (`a(cC)[1:3,1:3]`), and floating meta entries.
+
+### Floating meta entries
+
+`letter(mods)` can appear anywhere in the layout string as freestanding annotations — after map rows or inside pipe sizes segments. Multiple entries for the same area merge (classNames accumulate; later values win on key conflicts).
+
+```jsx
+// z-index + class after map rows
+<Grid layout="ab 8 a(z3 .hero)">
+
+// meta inside sizes segment — col sizes unaffected
+<Grid layout="ab | 200# a(z3)">
+
+// two entries — classNames accumulate
+<Grid layout="ab 8 a(.header) a(.sticky)">
+// ? a gets className "header sticky"
+```
+
 ## Component Props
 
 | Prop | Type | Description |
@@ -179,6 +258,7 @@ Line placement supports negative lines (`1:-1` = span full grid), z-index as a t
 | `vars` | `object` | Values for `{placeholder}` substitution |
 | `onVarsChange` | `function` | Callback when extensions mutate vars |
 | `extensions` | `array` | Extension objects |
+| `mode` | `"grid" \| "flex" \| "auto"` | Rendering model (`<Flex>` defaults to `"flex"`) |
 | `xs` `sm` `md` `lg` `xl` | `string` | Layout strings per container breakpoint |
 | `breaks` | `object` | Custom breakpoint thresholds |
 
@@ -231,14 +311,15 @@ let [v, setV] = useState({ w: 200 });
 |-----------|-------------|
 | `debug({ color? })` | Grid cell overlay |
 | `splitPane({ var, edge, min?, max? })` | Draggable resize handle |
-| `collapsible({ var, area, expanded?, collapsed? })` | Toggle area size on click |
+| `collapsible({ var, area, expanded?, collapsed?, handle? })` | Toggle area size on click |
 | `accordion({ var, items, collapsed? })` | Mutual exclusion — expand one, collapse others |
 | `scrollable({ area, axis? })` | Independent scrolling per area |
 | `overlay({ area, over })` | Layer one area over another's grid cells |
 | `animate({ properties?, duration?, easing? })` | CSS transitions on track changes |
 | `tabs({ var, items, position? })` | Tab bar with content switching |
 | `multiColumn({ area, fill? })` | CSS columns aligned to grid tracks |
-| `fisheye({ axis?, intensity?, min? })` | Tracks expand near cursor, compress away |
+| `fisheye({ axis?, intensity?, min?, sticky? })` | Tracks expand near cursor, compress away |
+| `masonry({ balanced? })` | Masonry layout via `translateY` / `translateX` — items declare aspect ratio with `--width`/`--height` CSS vars or are content-measured |
 | `render({ container?, cell? })` | Custom DOM output (semantic HTML, tables, etc.) |
 
 ### Writing custom extensions
@@ -269,13 +350,19 @@ area-def  = letter [digit+] | LETTER [digit+]
           | letter"["range","range"]"                  — line placement
           | letter"["range","range","number"]"          — line placement with z-index
           | letter"("mods")" "["range","range"]"        — line placement with alignment
-mods      = ("s"|"e"|"c"|"S"|"E"|"C")+
+mods      = mod+                                       — separated by whitespace or ","
+mod       = "s"|"e"|"c"|"l"|"S"|"E"|"C"|"L"           — justify/align-self
+          | "z" digit+                                 — z-index
+          | "." word                                   — className ("." self-delimiting)
+          | "=" word                                   — alias ("=" self-delimiting)
+          | digit+ ["!"]                               — flex-basis [+ no-shrink]
+          | digit+ "/" digit+                          — flex-basis / flex-shrink
 range     = number":"number                             — grid line start/end (1:3 ? 1 / 3)
 map-row   = (letter [digit+] | LETTER | "." | overlap)+ ["*"]
 overlap   = "[" letter letter+ "]"                      — shared cell: [iq] = i and q
 layer-sep = "+"                                         — overlay separator
 gap       = number [number]
-?flags    = "?" ("w"|"h"|"f"|"F"|"s"|"e"|"c"|"b"|"a"|"g"|"S"|"E"|"C"|"B"|"A"|"G")+
+?flags    = "?" ("w"|"h"|"f"|"F"|"x"|"W"|"s"|"e"|"c"|"b"|"a"|"g"|"S"|"E"|"C"|"B"|"A"|"G")+
 size      = "." | "#" | number | atom"~"atom | css-literal
 sizes     = size+ ["*"]
 
@@ -294,6 +381,10 @@ Implicit rules:
   "+" in map rows       → split into layers, pad, overlay
   "[xy]" cells          → bounding rect ? grid-column/grid-row
   separators            → whitespace (space, tab, newline) and commas
+  ?x or ?W              → mode switches to flex
+  flex # in sizes       → flex-grow:1 (not a track size)
+  flex Nfr in sizes     → flex-grow:N
+  letter(mods) floating → annotation anywhere in string, merges with legend
 ```
 
 ## Before & After

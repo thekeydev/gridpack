@@ -204,14 +204,37 @@ let splitPane = (opts) => ({
 		let axis = edgeLower === "l" || edgeLower === "r" ? "x" : "y";
 		let isX = axis === "x";
 
+		let flex = parsed.mode === "flex";
+
+		// in flex mode, position handle via order between the two areas
+		// find the index of edgeArea among the areas list
+		let handleOrder = null;
+		if (flex) {
+			let areaIdx = parsed.areas.indexOf(edgeArea);
+			// place handle after edgeArea (order = areaIdx + 0.5 isn't valid — use areaIdx * 2 + 1)
+			// assign order to all children via areaStyle instead; here just set the handle order
+			handleOrder = areaIdx * 2 + 1;
+		}
+
 		let handleStyle = {
-			gridArea: edgeArea,
-			alignSelf: "stretch",
-			justifySelf: "stretch",
-			position: "relative",
-			zIndex: 200,
-			pointerEvents: "none",
-			touchAction: "none",
+			...(flex ? {
+				order: handleOrder,
+				alignSelf: "stretch",
+				flexShrink: 0,
+				position: "relative",
+				zIndex: 200,
+				pointerEvents: "none",
+				touchAction: "none",
+				...(isX ? { width: 0, minWidth: 0 } : { height: 0, minHeight: 0 }),
+			} : {
+				gridArea: edgeArea,
+				alignSelf: "stretch",
+				justifySelf: "stretch",
+				position: "relative",
+				zIndex: 200,
+				pointerEvents: "none",
+				touchAction: "none",
+			}),
 		};
 
 		let barStyle = {
@@ -271,6 +294,12 @@ let splitPane = (opts) => ({
 				/>
 			</div>
 		];
+	},
+	areaStyle: (area, vars, parsed) => {
+		if (!parsed || parsed.mode !== "flex") return null;
+		let idx = parsed.areas.indexOf(area);
+		if (idx === -1) return null;
+		return { order: idx * 2 }; // even slots for areas, odd slots for handles
 	},
 });
 
@@ -348,11 +377,22 @@ let overlay = (opts) => ({
 // opts: { properties?, duration?, easing? }
 let animate = (opts = {}) => ({
 	name: "animate",
-	containerStyle: () => {
-		let props = opts.properties || ["grid-template-columns", "grid-template-rows"];
+	containerStyle: ({ parsed }) => {
 		let dur = opts.duration || "0.25s";
 		let ease = opts.easing || "ease";
+		if (parsed.mode === "flex") {
+			// flex containers don't have grid-template-* — animate flex-wrap layout changes
+			// item-level flex-basis transitions are handled in areaStyle below
+			return {};
+		}
+		let props = opts.properties || ["grid-template-columns", "grid-template-rows"];
 		return { transition: props.map(p => `${p} ${dur} ${ease}`).join(", ") };
+	},
+	areaStyle: (area, vars, parsed) => {
+		if (!parsed || parsed.mode !== "flex") return null;
+		let dur = opts.duration || "0.25s";
+		let ease = opts.easing || "ease";
+		return { transition: `flex-basis ${dur} ${ease}, max-width ${dur} ${ease}, max-height ${dur} ${ease}` };
 	},
 });
 
@@ -617,7 +657,7 @@ let tabs = (opts) => ({
 
 let Grid = ({ layout, col, gap, breaks, xs, sm, md, lg, xl,
 	vars: varsProp, onVarsChange, extensions = [],
-	nodivs = false,
+	nodivs = false, mode: modeProp,
 	className, style, children, ...rest
 }) => {
 	// --- internal vars state (used when uncontrolled) ---
@@ -652,7 +692,7 @@ let Grid = ({ layout, col, gap, breaks, xs, sm, md, lg, xl,
 	// check if base layout produces a full-width grid
 	let baseResolved = baseLayout;
 	if (effectiveVars) baseResolved = baseResolved.replace(/\{(\w+)\}/g, (_, k) => effectiveVars[k] ?? "");
-	let baseParsed = React.useMemo(() => parseGridLayout(baseResolved, childCount), [baseResolved, childCount]);
+	let baseParsed = React.useMemo(() => parseGridLayout(baseResolved, childCount, modeProp || "grid"), [baseResolved, childCount, modeProp]);
 	let baseIsFullWidth = !baseParsed.error && (
 		baseParsed.flags?.fullWidth ||
 		baseParsed.growAreas?.length > 0
@@ -674,8 +714,8 @@ let Grid = ({ layout, col, gap, breaks, xs, sm, md, lg, xl,
 
 	// parse
 	let parsedRaw = React.useMemo(
-		() => parseGridLayout(activeLayout, childCount),
-		[activeLayout, childCount],
+		() => parseGridLayout(activeLayout, childCount, modeProp || "grid"),
+		[activeLayout, childCount, modeProp],
 	);
 
 	// --- auto-flow -> named areas when extensions need it ---
@@ -787,7 +827,7 @@ let Grid = ({ layout, col, gap, breaks, xs, sm, md, lg, xl,
 		// apply extension area styles — pass original area name so extensions match their config
 		for (let ext of extensions) {
 			if (ext.areaStyle) {
-				let extStyle = ext.areaStyle(origArea, effectiveVars);
+				let extStyle = ext.areaStyle(origArea, effectiveVars, parsed);
 				if (extStyle) {
 					// filter out internal markers
 					let clean = {};
@@ -805,9 +845,16 @@ let Grid = ({ layout, col, gap, breaks, xs, sm, md, lg, xl,
 		// alignment (justifySelf/alignSelf) may need a wrapper to isolate from child sizing
 //		let needsWrap = extNeedsWrapper || nodivs || areaStyle.justifySelf || areaStyle.alignSelf;
 		let needsWrap = extNeedsWrapper || nodivs;
-		if (typeof child.type === "string" && !needsWrap)
-			return React.cloneElement(child, { key, style: { ...child.props.style, ...areaStyle } });
-		return <div key={key} style={areaStyle}>{child}</div>;
+		// pick up className and alias from areaProps
+		let ap = parsed.areaProps && parsed.areaProps[origArea];
+		let areaClass = ap?.className || null;
+		let areaName = ap?.alias || origArea;
+		if (typeof child.type === "string" && !needsWrap) {
+			let merged = { key, style: { ...child.props.style, ...areaStyle } };
+			if (areaClass) merged.className = [child.props.className, areaClass].filter(Boolean).join(" ");
+			return React.cloneElement(child, merged);
+		}
+		return <div key={key} style={areaStyle} className={areaClass || undefined} data-area={areaName}>{child}</div>;
 	});
 
 	// --- render extension elements ---
@@ -839,7 +886,14 @@ let Grid = ({ layout, col, gap, breaks, xs, sm, md, lg, xl,
 
 export default Grid;
 
-// --- render extension: custom DOM output ---
+// --- Flex: same as Grid but defaults to flex mode ---
+let Flex = (props) => <Grid {...props} mode={props.mode || "flex"} />;
+
+// --- Layout: chameleon variant — "d" prop, auto mode detection ---
+// use d= instead of layout= for the definition string
+let Layout = ({ d, layout, mode, ...props }) =>
+	<Grid {...props} layout={d || layout} mode={mode || "auto"} />;
+
 // opts.container  — renderContainer({ props, children, parsed }) => element
 // opts.cell       — wrapCell(child, areaStyle, key, childIdx, parsed) => element
 let render = (opts) => ({
@@ -1155,5 +1209,5 @@ let masonry = (opts = {}) => {
 	};
 };
 
-export { Grid, DefaultBreaks, useContainerWidth, debug, collapsible, accordion, splitPane,
+export { Grid, Flex, Layout, DefaultBreaks, useContainerWidth, debug, collapsible, accordion, splitPane,
 	scrollable, overlay, animate, tabs, multiColumn, fisheye, render, masonry };

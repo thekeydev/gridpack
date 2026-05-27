@@ -75,6 +75,8 @@ export default function Docs() {
 				<Ex code="?h" desc="Full height (height: 100%)" />
 				<Ex code="?f" desc="Reverse auto-flow direction (row↔column) — auto-flow only" />
 				<Ex code="?F" desc="Dense packing (grid-auto-flow: dense) — auto-flow only" />
+				<Ex code="?x" desc="Flex mode — emit display:flex instead of grid" />
+				<Ex code="?W" desc="flex-wrap: wrap (implies flex mode)" />
 				<Ex code="?s / ?S" desc="start" />
 				<Ex code="?e / ?E" desc="end" />
 				<Ex code="?c / ?C" desc="center" />
@@ -84,13 +86,29 @@ export default function Docs() {
 				<div style={{ color: "#555", marginTop: 4 }}>Mnemonic: <C>SECBAG</C> — Start End Center Borders Around Gaps</div>
 				<div style={{ color: "#555", marginTop: 2 }}>Transpose swaps justify↔align axes automatically.</div>
 			</Section>
-			<Section title="Per-Area Alignment">
+			<Section title="Per-Area Modifiers ()">
+				<div style={{ color: "#888", marginBottom: 4 }}>Attach modifiers to any area in the legend or as placement annotations. All types compose freely, separated by spaces or commas.</div>
 				<Ex code="a(s/e/c/l)" desc="justify-self: start / end / center / baseline" />
 				<Ex code="a(S/E/C/L)" desc="align-self: start / end / center / baseline" />
 				<Ex code="a(cC)" desc="center both axes" />
-				<Ex code="a(eS)" desc="end justify + start align" />
-				<div style={{ color: "#555", marginTop: 4 }}>Works in legend: <C>a(cC)B(sE)</C> or on placements: <C>a(cC)[1:3,1:3]</C></div>
-				<div style={{ color: "#555", marginTop: 4 }}>Transpose swaps justify-self↔align-self.</div>
+				<Ex code="a(z5)" desc="z-index: 5 on area wrapper" />
+				<Ex code="a(.hero)" desc="add CSS class 'hero' to wrapper" />
+				<Ex code="a(.foo.bar)" desc="add classes 'foo bar' — . is self-delimiting, no separator needed" />
+				<Ex code="a(=sidebar)" desc="data-area='sidebar' — alias for CSS targeting" />
+				<Ex code="a(200)" desc="flex-basis: 200px (flex mode)" />
+				<Ex code="a(200!)" desc="flex-basis: 200px + flex-shrink: 0" />
+				<Ex code="a(200/2)" desc="flex-basis: 200px + flex-shrink: 2" />
+				<Ex code="a(eC z3 .card)" desc="combined: end justify, center align, z-index 3, class 'card'" />
+				<div style={{ color: "#555", marginTop: 4 }}>Works in legend: <C>a(z5)B(sE)</C>, on placements: <C>a(cC)[1:3,1:3]</C>, and as floating meta entries.</div>
+				<div style={{ color: "#555", marginTop: 2 }}>Transpose swaps justify-self?align-self.</div>
+			</Section>
+			<Section title="Floating Meta Entries">
+				<div style={{ color: "#888", marginBottom: 4 }}>
+					<code style={{ color: "#c3e88d" }}>letter(mods)</code> can appear anywhere in the layout string — after map rows or inside pipe sizes — as freestanding annotations. Multiple entries merge: classNames accumulate, other keys take the later value.
+				</div>
+				<Ex code="ab 8 a(z3 .hero)" desc="z-index + class on a, after map rows" />
+				<Ex code="ab | 200# a(z3)" desc="meta in sizes segment — col sizes unaffected" />
+				<Ex code="ab a(.foo) a(.bar)" desc="two entries — className accumulates to 'foo bar'" />
 			</Section>
 			<Section title="Proportional Columns">
 				<div style={{ color: "#888", marginBottom: 4 }}>Repeating area chars in map rows → columns default to 1fr (proportional)</div>
@@ -116,10 +134,28 @@ export default function Docs() {
 				<div style={{ color: "#555", marginTop: 4 }}>Overlap areas are extracted from the map and positioned via grid-column/row.</div>
 				<div style={{ color: "#555", marginTop: 2 }}>Non-overlapping layers merge normally without bracket cells.</div>
 			</Section>
+			<Section title="Flex Mode">
+				<div style={{ color: "#888", marginBottom: 4 }}>Same DSL, <code style={{ color: "#c3e88d" }}>display: flex</code> output. Use <C>&lt;Flex&gt;</C> or add <C>?x</C> / <C>?W</C> to any layout string.</div>
+				<Ex code="<Flex layout='abc 8'>" desc="Flex row — h-stack with gap" />
+				<Ex code="<Flex layout='|abc 8'>" desc="Flex column — v-stack with gap" />
+				<Ex code="abc 8 ?x" desc="Same as <Flex> — explicit flex flag on <Grid>" />
+				<Ex code="* 8 ?w ?W | *140~200" desc="Wrap — last row auto-centers (impossible with grid)" />
+				<Ex code="<Layout d='abc ?x'>" desc="<Layout> with d prop — mode auto-detected from flags" />
+				<div style={{ color: "#555", marginTop: 6, marginBottom: 2 }}>In flex mode:</div>
+				<Ex code="A (uppercase)" desc="flex-grow: 1 — same semantics as grid grow areas" />
+				<Ex code="| prefix" desc="flex-direction: column" />
+				<Ex code="?f" desc="row-reverse / column-reverse when combined with |" />
+				<Ex code="| 200 # 100" desc="flex-basis per item in flow order: 200px, grow, 100px" />
+				<Ex code="| 1fr 2fr" desc="flex-grow: 1, flex-grow: 2" />
+				<Ex code="| 120~# 80~200" desc="basis 120 + grow freely / basis 80 + max-width 200" />
+				<Ex code="a(200!)" desc="flex-basis 200px, flex-shrink: 0 — via () modifier" />
+				<div style={{ color: "#555", marginTop: 4 }}>Transposed layouts use <C>max-height</C> instead of <C>max-width</C> for minmax caps.</div>
+			</Section>
 			<Section title="Grid Component Props">
 				<Ex code="layout" desc="Layout string" />
 				<Ex code="col" desc="Boolean — prepend | for vertical layout" />
 				<Ex code="gap" desc="Override gap — number (px) or string" />
+				<Ex code="mode" desc='"grid" | "flex" | "auto" — rendering model (<Flex> defaults to "flex")' />
 				<Ex code="vars" desc="Template vars — values for {placeholder} substitution" />
 				<Ex code="onVarsChange" desc="Callback when extensions mutate vars" />
 				<Ex code="extensions" desc="Extension array" />
@@ -137,10 +173,10 @@ export default function Docs() {
 				<Ex code='accordion({ var, items, collapsed? })' desc="Mutual exclusion — items: [{ area, sizeVar, expanded }]" />
 				<Ex code='tabs({ var, items, position? })' desc='Tab bar — items: [{ label, area, sizeVar? }], position: "top" | "bottom"' />
 				<Ex code='multiColumn({ area, fill? })' desc='Auto-align CSS multi-column to grid tracks — fill: "auto"|"balance"' />
-				<Ex code='fisheye({ axis?, intensity?, min? })' desc='Tracks expand near cursor — axis: "x"|"y"|"both". Auto-swaps on transpose.' />
-				<Ex code='masonry({ balanced? })' desc='Masonry layout — close gaps via translateY. Items use --width/--height CSS vars or get measured. Transpose-aware.' />
+				<Ex code='fisheye({ axis?, intensity?, min?, sticky? })' desc='Tracks expand near cursor — axis: "x"|"y"|"both". sticky: keep effect after cursor leaves. Auto-swaps on transpose.' />
+				<Ex code='masonry({ balanced? })' desc='Masonry layout — close gaps via translateY (or translateX when transposed). Items use --width/--height CSS vars for aspect-ratio sizing, or get measured from DOM. balanced: reorder items per row to minimize height.' />
 				<Ex code='render({ container?, cell? })' desc="Custom DOM output — replace container tag and/or cell wrapper elements" />
-				<div style={{ color: "#555", marginTop: 8, fontSize: 11 }}>Extension interface: {"{ name, render?, renderContainer?, wrapCell?, containerStyle?, areaStyle?, transformVars?, transformAreas?, needsAreas? }"}</div>
+				<div style={{ color: "#555", marginTop: 8, fontSize: 11 }}>Extension interface: {"{ name, render?, renderContainer?, wrapCell?, containerStyle?, areaStyle?, transformVars?, transformAreas?, needsAreas?, needsWrapper? }"}</div>
 			</Section>
 			<Section title="Quick Examples">
 				<Ex code="ab" desc="Two equal columns" />
@@ -236,6 +272,8 @@ flag-char    = "w"                               -- width: 100%
 			| "h"                               -- height: 100%
 			| "f"                               -- reverse auto-flow (row↔column)
 			| "F"                               -- dense packing (grid-auto-flow: dense)
+			| "x"                               -- flex mode (display: flex)
+			| "W"                               -- flex-wrap: wrap (implies flex mode)
 			| "s" | "e" | "c" | "b" | "a" | "g" -- justify-content (lowercase)
 			| "S" | "E" | "C" | "B" | "A" | "G" -- align-content (uppercase)
 
@@ -245,16 +283,27 @@ flag-char    = "w"                               -- width: 100%
 
 
 -- ───────────────────────────────────────────────
---  PER-AREA ALIGNMENT (in legend or placement)
+--  PER-AREA MODIFIERS
 -- ───────────────────────────────────────────────
 
-self-mods    = self-mod+
+self-mods    = mod+                                  -- separated by whitespace or ","
+			-- "." and "=" are self-delimiting (no separator needed)
 
 self-mod     = "s" | "e" | "c" | "l"            -- justify-self (lowercase)
 			| "S" | "E" | "C" | "L"            -- align-self (uppercase)
+			| "z" digit+                           -- z-index
+			| "." word                             -- className (self-delimiting)
+			| "=" word                             -- alias / data-area (self-delimiting)
+			| digit+ ["!"]                         -- flex-basis [+ flex-shrink:0]
+			| digit+ "/" digit+                    -- flex-basis / flex-shrink
 
-			-- s/S = start, e/E = end, c/C = center, l/L = baseline
-			-- e.g. a(cC) = center both axes, a(eS) = end justify + start align
+			-- examples:
+			--   a(cC)          = center both axes
+			--   a(z5 .card)    = z-index 5, class "card"
+			--   a(.foo.bar)    = classes "foo bar" (chained)
+			--   a(=sidebar)    = data-area="sidebar"
+			--   a(200!)        = flex-basis 200px, flex-shrink 0
+			--   a(eC z3 .hero) = all combined
 
 
 -- ───────────────────────────────────────────────
@@ -404,7 +453,35 @@ css-size     = <any non-whitespace not matching above>
 --   enables dynamic layouts via splitPane, collapsible, etc.
 
 
--- ─── proportional columns ──────────────────────
+-- ─── floating meta entries ──────────────────────────
+
+--   letter(mods) anywhere in the layout string = annotation on that area
+--   can appear after map rows or inside pipe sizes segments
+--   multiple entries for the same area merge:
+--     classNames accumulate (space-separated)
+--     other keys: later value wins
+--   e.g. "ab 8 a(z3 .hero)"  — z+class on a, no effect on sizes
+
+
+-- ─── flex mode ──────────────────────────
+
+--   ?x or ?W flag ? mode = "flex" (display: flex)
+--   | prefix      ? flex-direction: column
+--   ?f            ? row-reverse / column-reverse
+--   ?W            ? flex-wrap: wrap
+--   uppercase letters ? flex-grow: 1 (same as grid grow areas)
+--   sizes segment in flex mode ? per-item flex-basis in flow order
+--     "."  ? auto (no-op)
+--     "#" / "1fr"  ? flex-grow: 1 (no basis)
+--     "2fr"        ? flex-grow: 2
+--     "200"        ? flex-basis: 200px
+--     "120~#"      ? flex-basis: 120px + flex-grow: 1
+--     "120~200"    ? flex-basis: 120px + max-width: 200px + flex-grow: 1
+--   transposed flex uses max-height instead of max-width for minmax caps
+--   () modifiers: 200 = flex-basis, 200! = +no-shrink, 200/N = +shrink N
+
+
+-- ─── proportional columns ──────────────────────────
 
 --   when area chars repeat in map rows without explicit col-sizes:
 --     all columns default to 1fr (proportional mode)

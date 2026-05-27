@@ -727,6 +727,435 @@ section("[] + normal areas coexist");
 	eq(sq.gridArea, "a", "[] + normal: a gets gridArea");
 }
 
+// --- unified () modifier parser ---
+
+section("() flex-basis");
+{
+	let r = p("a(200) b 8");
+	eq(r.areaProps?.a?.flexBasis, "200px", "a(200): flexBasis 200px");
+}
+{
+	let r = p("a(200!) b 8");
+	eq(r.areaProps?.a?.flexBasis, "200px", "a(200!): flexBasis 200px");
+	eq(r.areaProps?.a?.flexShrink, 0, "a(200!): flexShrink 0");
+}
+{
+	let r = p("a(200/2) b 8");
+	eq(r.areaProps?.a?.flexBasis, "200px", "a(200/2): flexBasis 200px");
+	eq(r.areaProps?.a?.flexShrink, 2, "a(200/2): flexShrink 2");
+}
+{
+	let r = p("a(0) b 8");
+	eq(r.areaProps?.a?.flexBasis, "0px", "a(0): flexBasis 0px");
+}
+
+section("() z-index");
+{
+	let r = p("a(z5) b 8");
+	eq(r.areaProps?.a?.z, 5, "a(z5): z-index 5");
+	let s = toAreaStyle(r, "a", 0);
+	eq(s.zIndex, 5, "a(z5): zIndex in area style");
+}
+{
+	// legacy [] z-index still works
+	let r = p("a[1:2,1:2,5] b[2:3,1:2]");
+	let s = toAreaStyle(r, "a", 0);
+	eq(s.zIndex, 5, "legacy [col,row,z]: zIndex still works");
+}
+
+section("() className and alias");
+{
+	let r = p("a(.hero) b 8");
+	eq(r.areaProps?.a?.className, "hero", "a(.hero): single className");
+}
+{
+	let r = p("a(.foo .bar .baz) b 8");
+	eq(r.areaProps?.a?.className, "foo bar baz", "a(.foo .bar .baz): multiple classnames with spaces");
+}
+{
+	// . is self-delimiting — no whitespace needed
+	let r = p("a(.foo.bar.baz) b 8");
+	eq(r.areaProps?.a?.className, "foo bar baz", "a(.foo.bar.baz): chained dots no separator");
+}
+{
+	// . and = self-delimiting together
+	let r = p("a(.card=header) b 8");
+	eq(r.areaProps?.a?.className, "card", ".card=header: className");
+	eq(r.areaProps?.a?.alias, "header", ".card=header: alias");
+}
+{
+	// alignment + chained dots, no separator
+	let r = p("a(eC.card.hero) b 8");
+	eq(r.areaAlign?.a?.justifySelf, "end", "eC.card.hero: justifySelf");
+	eq(r.areaProps?.a?.className, "card hero", "eC.card.hero: classNames");
+}
+{
+	// sizing still needs whitespace/comma
+	let r = p("a(.card 200! z3) b 8");
+	eq(r.areaProps?.a?.className, "card", "class + sizing: className");
+	eq(r.areaProps?.a?.flexBasis, "200px", "class + sizing: basis");
+	eq(r.areaProps?.a?.flexShrink, 0, "class + sizing: no-shrink");
+	eq(r.areaProps?.a?.z, 3, "class + sizing: z-index");
+}
+{
+	// classes from legend + floating meta accumulate
+	let r = p("a(.foo) b 8 a(.bar)");
+	eq(r.areaProps?.a?.className, "foo bar", "legend class + meta class: accumulate");
+}
+{
+	// classes split across two floating meta entries
+	let r = p("ab 8 a(.foo) a(.bar .baz)");
+	eq(r.areaProps?.a?.className, "foo bar baz", "two meta entries + chained: all joined");
+}
+{
+	let r = p("a(=header) b 8");
+	eq(r.areaProps?.a?.alias, "header", "a(=header): alias");
+}
+
+section("() combined modifiers");
+{
+	let r = p("a(eC 200! .card) b 8");
+	eq(r.areaAlign?.a?.justifySelf, "end", "combined: justifySelf");
+	eq(r.areaAlign?.a?.alignSelf, "center", "combined: alignSelf");
+	eq(r.areaProps?.a?.flexBasis, "200px", "combined: flexBasis");
+	eq(r.areaProps?.a?.flexShrink, 0, "combined: flexShrink 0");
+	eq(r.areaProps?.a?.className, "card", "combined: className");
+}
+{
+	// comma-separated tokens also work
+	let r = p("a(eC, 200!, .card) b 8");
+	eq(r.areaAlign?.a?.justifySelf, "end", "combined comma: justifySelf");
+	eq(r.areaProps?.a?.flexBasis, "200px", "combined comma: flexBasis");
+}
+{
+	// alignment still works alone (backward compat)
+	let r = p("a(e)B(sC)", 2);
+	eq(r.areaAlign.a, { justifySelf: "end", alignSelf: null }, "backward compat: a(e)");
+	eq(r.areaAlign.b, { justifySelf: "start", alignSelf: "center" }, "backward compat: B(sC)");
+}
+
+section("() with placement override: a(mods)[col,row]");
+{
+	let r = p("q i(cC z3)[1:3,1:3] .qq .qq", 2);
+	eq(r.areaAlign.i?.justifySelf, "center", "a(cC z3)[...]: justifySelf");
+	eq(r.areaAlign.i?.alignSelf, "center", "a(cC z3)[...]: alignSelf");
+	eq(r.placementOverrides.i?.z, 3, "a(cC z3)[...]: z from ()");
+	let s = toAreaStyle(r, "i", 0);
+	eq(s.zIndex, 3, "a(cC z3)[...]: zIndex in style");
+	eq(s.gridColumn, "1 / 3", "a(cC z3)[...]: placement still works");
+}
+
+// --- floating meta entries ---
+
+section("floating meta entries");
+{
+	// meta entry in main segment (after map rows)
+	let r = p("ab 8 a(z3 .hero)", 2);
+	eq(r.areaProps?.a?.z, 3, "float main: z-index");
+	eq(r.areaProps?.a?.className, "hero", "float main: className");
+}
+{
+	// meta entry in sizes segment
+	let r = p("ab 8 | 200# a(z3)", 2);
+	eq(r.areaProps?.a?.z, 3, "float sizes: z from meta");
+	eq(r.colSizes[0], "200px", "float sizes: col size unaffected");
+	eq(r.colSizes[1], "1fr", "float sizes: col size unaffected");
+}
+{
+	// meta entry alignment merges into areaAlign
+	let r = p("ab 8 a(cC)", 2);
+	eq(r.areaAlign?.a?.justifySelf, "center", "float align: justifySelf merged");
+	eq(r.areaAlign?.a?.alignSelf, "center", "float align: alignSelf merged");
+}
+{
+	// meta wins over legend on conflict
+	let r = p("a(z2) b 8 a(z5)", 2);
+	eq(r.areaProps?.a?.z, 5, "meta wins: z=5 over z=2");
+}
+{
+	// meta + legend merge (different keys)
+	let r = p("a(200) b 8 a(z3 .card)", 2);
+	eq(r.areaProps?.a?.flexBasis, "200px", "merge: basis from legend");
+	eq(r.areaProps?.a?.z, 3, "merge: z from meta");
+	eq(r.areaProps?.a?.className, "card", "merge: class from meta");
+}
+
+// --- flex mode ---
+
+section("flex mode: flags");
+{
+	let r = p("ab 8 ?x", 2);
+	eq(r.mode, "flex", "?x: mode=flex");
+	eq(r.flags.flexMode, true, "?x: flexMode flag");
+}
+{
+	let r = p("* 8 ?W", 4);
+	eq(r.mode, "flex", "?W: mode=flex");
+	eq(r.flags.flexWrap, true, "?W: flexWrap flag");
+}
+{
+	// defaultMode param
+	let r = parseGridLayout("ab 8", 2, "flex");
+	eq(r.mode, "flex", "defaultMode=flex");
+}
+{
+	// auto mode: no flags = grid
+	let r = parseGridLayout("ab 8", 2, "auto");
+	eq(r.mode, "grid", "auto + no flags = grid");
+}
+{
+	// auto mode: ?W = flex
+	let r = parseGridLayout("* 8 ?W", 4, "auto");
+	eq(r.mode, "flex", "auto + ?W = flex");
+}
+{
+	// explicit ?x overrides defaultMode=grid
+	let r = parseGridLayout("ab 8 ?x", 2, "grid");
+	eq(r.mode, "flex", "?x overrides defaultMode=grid");
+}
+
+section("flex mode: toGridStyle");
+{
+	let s = toGridStyle(p("ab 8 ?x", 2));
+	eq(s.display, "flex", "flex: display:flex");
+	eq(s.flexDirection, "row", "flex: row direction default");
+	ok(!s.gridTemplateColumns, "flex: no gridTemplateColumns");
+	ok(!s.gridTemplateAreas, "flex: no gridTemplateAreas");
+}
+{
+	// transpose → column
+	let s = toGridStyle(p("|ab 8 ?x", 2));
+	eq(s.flexDirection, "column", "flex |: column");
+}
+{
+	// ?f → row-reverse
+	let s = toGridStyle(p("ab 8 ?x ?f", 2));
+	eq(s.flexDirection, "row-reverse", "flex ?f: row-reverse");
+}
+{
+	// | + ?f → column-reverse
+	let s = toGridStyle(p("|ab 8 ?x ?f", 2));
+	eq(s.flexDirection, "column-reverse", "flex | ?f: column-reverse");
+}
+{
+	// ?W → flex-wrap:wrap
+	let s = toGridStyle(p("* 8 ?W", 4));
+	eq(s.flexWrap, "wrap", "flex ?W: flex-wrap:wrap");
+}
+{
+	// gap preserved
+	let s = toGridStyle(p("ab 8 ?x", 2));
+	eq(s.gap, "8px", "flex: gap preserved");
+}
+{
+	// justify-content preserved
+	let s = toGridStyle(p("ab 8 ?x ?c", 2));
+	eq(s.justifyContent, "center", "flex: justifyContent preserved");
+}
+{
+	// full width from grow
+	let s = toGridStyle(p("Ab ?x", 2));
+	eq(s.width, "100%", "flex grow: width 100%");
+}
+{
+	// ?w flag
+	let s = toGridStyle(p("ab ?x ?w", 2));
+	eq(s.width, "100%", "flex ?w: width 100%");
+}
+
+section("flex mode: toAreaStyle");
+{
+	// grow → flex-grow:1
+	let r = p("Ab ?x", 2);
+	let s = toAreaStyle(r, "a", 0);
+	eq(s.flexGrow, 1, "flex grow: flexGrow:1");
+	ok(!s.gridArea, "flex grow: no gridArea");
+}
+{
+	// basis from areaProps
+	let r = p("ab 8 ?x a(200)", 2);
+	let s = toAreaStyle(r, "a", 0);
+	eq(s.flexBasis, "200px", "flex basis: from ()");
+}
+{
+	// shrink from areaProps
+	let r = p("ab 8 ?x a(200/0)", 2);
+	let s = toAreaStyle(r, "a", 0);
+	eq(s.flexShrink, 0, "flex shrink: 0 from (200/0)");
+}
+{
+	// no-shrink shorthand
+	let r = p("ab 8 ?x a(150!)", 2);
+	let s = toAreaStyle(r, "a", 0);
+	eq(s.flexBasis, "150px", "flex no-shrink: basis");
+	eq(s.flexShrink, 0, "flex no-shrink: shrink=0");
+}
+{
+	// basis from sizes segment in flex mode
+	let r = p("ab 8 ?x | 200 300", 2);
+	let sA = toAreaStyle(r, "a", 0);
+	let sB = toAreaStyle(r, "b", 1);
+	eq(sA.flexBasis, "200px", "flex sizes: a basis");
+	eq(sB.flexBasis, "300px", "flex sizes: b basis");
+}
+{
+	// minmax in flex = basis + maxWidth + flexGrow:1
+	let r = p("ab 8 ?x | 200~300 80~200", 2);
+	let sA = toAreaStyle(r, "a", 0);
+	let sB = toAreaStyle(r, "b", 1);
+	eq(sA.flexBasis, "200px", "flex minmax: basis");
+	eq(sA.maxWidth, "300px", "flex minmax: maxWidth");
+	eq(sA.flexGrow, 1, "flex minmax: flexGrow:1");
+	eq(sB.flexBasis, "80px", "flex minmax b: basis");
+	eq(sB.maxWidth, "200px", "flex minmax b: maxWidth");
+	eq(sB.flexGrow, 1, "flex minmax b: flexGrow:1");
+}
+{
+	// 1fr upper bound = no max-width, just grow freely
+	let r = p("ab 8 ?x | 150~# 150~300", 2);
+	let sA = toAreaStyle(r, "a", 0);
+	ok(!sA.maxWidth, "150~#: no maxWidth");
+	eq(sA.flexGrow, 1, "150~#: flexGrow:1");
+	eq(sA.flexBasis, "150px", "150~#: flexBasis");
+}
+{
+	// 1fr default in sizes = no basis (ignored in flex)
+	let r = p("ab 8 ?x", 2);
+	let s = toAreaStyle(r, "a", 0);
+	ok(!s.flexBasis, "flex default 1fr: no flexBasis emitted");
+}
+{
+	// alignment (alignSelf) still works in flex
+	let r = p("a(E) b 8 ?x", 2);
+	let s = toAreaStyle(r, "a", 0);
+	eq(s.alignSelf, "end", "flex alignSelf: preserved");
+}
+{
+	// z-index in flex
+	let r = p("ab 8 ?x a(z9)", 2);
+	let s = toAreaStyle(r, "a", 0);
+	eq(s.zIndex, 9, "flex z-index: from ()");
+}
+
+section("flex mode: transposed basis");
+{
+	// transpose + sizes segment → rowSizes used as flex-basis
+	let r = p("|ab 8 ?x | 120 200", 2);
+	eq(r.transpose, true, "transposed: transpose=true");
+	let sA = toAreaStyle(r, "a", 0);
+	let sB = toAreaStyle(r, "b", 1);
+	eq(sA.flexBasis, "120px", "transposed: a basis from rowSizes");
+	eq(sB.flexBasis, "200px", "transposed: b basis from rowSizes");
+}
+{
+	// minmax in transposed flex → maxHeight not maxWidth + flexGrow:1
+	let r = p("|ab 8 ?x | 80~200 80~200", 2);
+	let s = toAreaStyle(r, "a", 0);
+	eq(s.flexBasis, "80px", "transposed minmax: flexBasis");
+	eq(s.maxHeight, "200px", "transposed minmax: maxHeight (not maxWidth)");
+	ok(!s.maxWidth, "transposed minmax: no maxWidth");
+	eq(s.flexGrow, 1, "transposed minmax: flexGrow:1");
+}
+{
+	// non-transposed explicit minmax → maxWidth + flexGrow:1
+	let r = p("ab 8 ?x | 80~200 80~200", 2);
+	let s = toAreaStyle(r, "a", 0);
+	eq(s.flexBasis, "80px", "non-transposed minmax: flexBasis");
+	eq(s.maxWidth, "200px", "non-transposed minmax: maxWidth");
+	ok(!s.maxHeight, "non-transposed minmax: no maxHeight");
+	eq(s.flexGrow, 1, "non-transposed minmax: flexGrow:1");
+}
+
+section("areaProps: className and alias in parsed output");
+{
+	// className present in areaProps — consumed by Grid.jsx wrapper
+	let r = p("a(.hero)b 8");
+	eq(r.areaProps?.a?.className, "hero", "className in areaProps");
+}
+{
+	// alias present in areaProps
+	let r = p("a(=sidebar)b 8");
+	eq(r.areaProps?.a?.alias, "sidebar", "alias in areaProps");
+}
+{
+	// combined className + alias
+	let r = p("a(.card=header)b 8");
+	eq(r.areaProps?.a?.className, "card", "combined: className");
+	eq(r.areaProps?.a?.alias, "header", "combined: alias");
+}
+{
+	// floating meta entry
+	let r = p("ab 8 a(.hero=sidebar)");
+	eq(r.areaProps?.a?.className, "hero", "meta float: className");
+	eq(r.areaProps?.a?.alias, "sidebar", "meta float: alias");
+}
+{
+	// origArea lookup: areaProps keyed by original letter
+	// (auto-flow areas use c0,c1 — but named areas use the letter)
+	let r = p("ab 8 ?wh a(.card)");
+	eq(r.areaProps?.a?.className, "card", "named area: areaProps keyed by letter");
+}
+{
+	// existing grid layouts must produce mode=grid and same styles
+	let r = p("hsCf hhhh sccc sfff 8", 4);
+	eq(r.mode, "grid", "grid regression: mode=grid");
+	let s = toGridStyle(r);
+	eq(s.display, "grid", "grid regression: display:grid");
+	ok(s.gridTemplateAreas, "grid regression: has templateAreas");
+}
+{
+	let r = p("*4 8 ?w", 8);
+	eq(r.mode, "grid", "auto-flow regression: mode=grid");
+	let s = toGridStyle(r);
+	eq(s.display, "grid", "auto-flow regression: display:grid");
+}
+
+// --- flex mode: fr and # as flex-grow in sizes segment ---
+
+section("flex mode: fr and # as flex-grow in sizes segment");
+{
+	// # (normalized to 1fr) → flex-grow: 1
+	let r = p("abc 8 ?x | # 200 100", 3);
+	let sA = toAreaStyle(r, "a", 0);
+	eq(sA.flexGrow, 1, "# ? flexGrow:1");
+	ok(!sA.flexBasis, "# ? no flexBasis");
+	eq(toAreaStyle(r, "b", 1).flexBasis, "200px", "200 ? flexBasis:200px");
+	eq(toAreaStyle(r, "c", 2).flexBasis, "100px", "100 ? flexBasis:100px");
+}
+{
+	// 2fr → flex-grow: 2
+	let r = p("abc 8 ?x | 2fr 1fr 100", 3);
+	eq(toAreaStyle(r, "a", 0).flexGrow, 2, "2fr ? flexGrow:2");
+	eq(toAreaStyle(r, "b", 1).flexGrow, 1, "1fr ? flexGrow:1");
+	eq(toAreaStyle(r, "c", 2).flexBasis, "100px", "100 ? flexBasis");
+}
+{
+	// uppercase (legend grow) + 2fr in sizes: sizes-segment wins
+	let r = p("Abc 8 ?x | 2fr 200 100", 3);
+	eq(toAreaStyle(r, "a", 0).flexGrow, 2, "A(grow) + 2fr sizes: flexGrow:2 wins");
+}
+{
+	// uppercase + px basis: legend grow + basis both apply
+	let r = p("Abc 8 ?x | 200 # 100", 3);
+	let sA = toAreaStyle(r, "a", 0);
+	eq(sA.flexGrow, 1, "A(grow) + 200 sizes: flexGrow:1 from legend");
+	eq(sA.flexBasis, "200px", "A(grow) + 200 sizes: flexBasis:200px");
+	eq(toAreaStyle(r, "b", 1).flexGrow, 1, "b + # sizes: flexGrow:1");
+}
+{
+	// transposed: rowSizes used for fr too
+	let r = p("|abc 8 ?x | # 200 2fr", 3);
+	eq(toAreaStyle(r, "a", 0).flexGrow, 1, "transposed # ? flexGrow:1");
+	eq(toAreaStyle(r, "b", 1).flexBasis, "200px", "transposed 200 ? flexBasis");
+	eq(toAreaStyle(r, "c", 2).flexGrow, 2, "transposed 2fr ? flexGrow:2");
+}
+{
+	// grid mode unaffected — fr stays as track size string
+	let r = p("abc 8 | 2fr 1fr 1fr", 3);
+	eq(r.mode, "grid", "grid mode: fr stays as track size");
+	eq(r.colSizes[0], "2fr", "grid mode: 2fr string preserved");
+}
+
 // --- summary ---
 
 console.log(`\n  ${passed} passed, ${failed} failed\n`);

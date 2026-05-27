@@ -1,5 +1,36 @@
 # Changelog
 
+## 0.3.0
+
+### Flex Mode
+
+- **`?x` flag** — opt into flex mode from `<Grid layout="abc 8 ?x">` without switching component.
+- **`?W` flag** — `flex-wrap: wrap`, implicitly switches to flex mode. Solves the CSS grid last-row centering problem: with flex wrap + `justify-content: center`, incomplete last rows center automatically — impossible with grid alone.
+- **Uppercase = flex-grow** — uppercase letters in the legend map to `flex-grow: 1`, matching grid's grow semantics.
+- **Flex sizing from pipe** — in flex mode the `| sizes` segment sets per-item `flex-basis` in flow order. `#` / `1fr` maps to `flex-grow: 1`, `2fr` to `flex-grow: 2`, `minmax(a, b)` to `flex-basis: a` + `max-width: b` + `flex-grow: 1`. Transposed layouts use `max-height` instead.
+- **Transpose = column direction** — `|` prefix maps to `flex-direction: column`. `?f` produces `row-reverse` / `column-reverse`.
+- **`<Layout>` component** — `d` prop shorthand with `mode="auto"`: flex when `?W`/`?x` flags present, grid otherwise.
+  - **`<Flex>` component** — same DSL as `<Grid>` but emits `display: flex`. Drop-in for h-stacks, v-stacks, and wrapping layouts where flex's content-negotiation model fits better than grid's track model.
+- **`splitPane` in flex mode** — handle positioned via CSS `order` property (even slots for areas, odd for handles).
+- 9 flex mode playground presets: Basic `<Flex>`, V-Stack, Grow with uppercase, Reverse `?f`, Wrap `?W`, Wrap + center last row, Sidebar in grid vs flex, Split Pane in flex mode.
+  - and more other (also flex mode related) playground presets
+
+### Unified `()` Modifier System
+
+The per-area `( )` syntax is extended from alignment-only to a full annotation system. All modifier types compose freely inside one set of parens, separated by whitespace or commas. `.` and `=` are self-delimiting.
+
+- **className** — `a(.hero)` adds CSS class `hero`. Chained: `a(.foo.bar)` = `foo bar`. Accumulates across multiple entries for the same area.
+- **alias / data-area** — `a(=sidebar)` sets `data-area="sidebar"` on the wrapper for CSS targeting without coupling to grid area letter names.
+- **flex-basis** (flex mode) — `a(200)` = `flex-basis: 200px`. `a(200!)` also sets `flex-shrink: 0`. `a(200/2)` sets `flex-shrink: 2`.
+- **z-index** — `a(z5)` sets `z-index: 5` on the area wrapper. Useful with overlap layouts (v0.2.4).
+- **Combined** — `a(eC 200! .card z3)`: justify-end, align-center, no-shrink at 200px, class `card`, z-index 3.
+- Works in: legend (`a(z5)b`), floating meta entries, and placement overrides (`a(cC)[1:3,1:3]`).
+- Floating Meta Entries: `letter(mods)` tokens can appear anywhere in the layout string — after map rows in the main segment or inside pipe sizes segments — as freestanding annotations on any area. Multiple entries for the same area merge (classNames concatenate; later values win on key conflicts).
+
+### Other
+
+- Test suite expanded from 250 to 377 tests.
+
 ## 0.2.4
 
 ### Overlap Layouts

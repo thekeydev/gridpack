@@ -73,51 +73,119 @@ let parseSizeRepeat = (sizeStr) => {
 let buildRepeatSizes = (repeatMode, sizes) =>
 	"repeat(" + repeatMode + ", " + sizes.join(" ") + ")";
 
-// --- ? flags: secbag/SECBAG + w/h ---
+// --- ? flags: secbag/SECBAG + w/h/x/W ---
 let JustifyMap = { s: "start", e: "end", c: "center", b: "space-between", a: "space-around", g: "space-evenly" };
 let AlignMap = { S: "start", E: "end", C: "center", B: "space-between", A: "space-around", G: "space-evenly" };
 
 let parseFlags = (str) => {
-	let f = { fullWidth: false, fullHeight: false, flowReverse: false, flowDense: false, justifyContent: null, alignContent: null };
+	let f = {
+		fullWidth: false, fullHeight: false, flowReverse: false, flowDense: false,
+		justifyContent: null, alignContent: null,
+		flexMode: false, flexWrap: false,
+	};
 	for (let ch of str) {
 		if (ch === "w") f.fullWidth = true;
 		else if (ch === "h") f.fullHeight = true;
 		else if (ch === "f") f.flowReverse = true;
 		else if (ch === "F") f.flowDense = true;
+		else if (ch === "x") f.flexMode = true;
+		else if (ch === "W") { f.flexWrap = true; f.flexMode = true; } // ?W implies flex
 		else if (JustifyMap[ch]) f.justifyContent = JustifyMap[ch];
 		else if (AlignMap[ch]) f.alignContent = AlignMap[ch];
 	}
 	return f;
 };
 
-// --- legend parser: a(eC)B(s)c ---
+// --- unified () modifier parser ---
+// tokens separated by whitespace or comma inside ():
+//   alignment chars [sceSCEL]     -> justifySelf / alignSelf
+//   digit[px|%|fr|rem|em]?[!]     -> flex-basis (+ shrink 0 if !)
+//   digit/digit                   -> flex-basis / shrink-factor
+//   zN                            -> z-index N
+//   .word                         -> className
+//   =word                         -> area alias/name
 let SelfJMap = { s: "start", e: "end", c: "center", l: "baseline" };
 let SelfAMap = { S: "start", E: "end", C: "center", L: "baseline" };
 
+let parseAreaMods = (mods) => {
+	let result = { justifySelf: null, alignSelf: null, flexBasis: null, flexShrink: null, z: null, className: null, alias: null };
+	// split on whitespace and commas, keeping together digit-sequences
+	// tokenize: whitespace/comma are separators (consumed)
+	// . and = are self-delimiting — they flush the current token and start a new one
+	// everything else (alignment chars, digit-sequences, z-prefix) needs whitespace/comma
+	let classNames = [];
+	let tokens = [];
+	let buf = "";
+	let flush = () => { if (buf) { tokens.push(buf); buf = ""; } };
+	for (let ch of mods) {
+		if (ch === " " || ch === "\t" || ch === ",") { flush(); continue; }
+		if (ch === "." || ch === "=") { flush(); buf = ch; continue; }
+		buf += ch;
+	}
+	flush();
+	for (let tok of tokens) {
+		if (tok.startsWith(".")) {
+			classNames.push(tok.slice(1));
+		} else if (tok.startsWith("=")) {
+			result.alias = tok.slice(1);
+		} else if (/^z\d+$/.test(tok)) {
+			result.z = parseInt(tok.slice(1));
+		} else if (/^\d/.test(tok)) {
+			// basis or basis/shrink
+			if (tok.includes("/")) {
+				let [b, s] = tok.split("/");
+				result.flexBasis = normSizeAtom(b.replace(/!$/, ""));
+				result.flexShrink = parseFloat(s);
+			} else {
+				let noShrink = tok.endsWith("!");
+				let raw = noShrink ? tok.slice(0, -1) : tok;
+				result.flexBasis = normSizeAtom(raw);
+				if (noShrink) result.flexShrink = 0;
+			}
+		} else {
+			// alignment chars
+			for (let ch of tok) {
+				if (SelfJMap[ch]) result.justifySelf = SelfJMap[ch];
+				else if (SelfAMap[ch]) result.alignSelf = SelfAMap[ch];
+			}
+		}
+	}
+	if (classNames.length) result.className = classNames.join(" ");
+	return result;
+};
+
+// --- legend parser: a(eC)B(s)c ---
 let parseLegend = (legend) => {
-	let areas = [], growAreas = new Set(), areaAlign = {};
+	let areas = [], growAreas = new Set(), areaAlign = {}, areaProps = {};
 	let i = 0;
 	while (i < legend.length) {
 		let ch = legend[i];
 		if (!/[a-zA-Z]/.test(ch)) return { error: `invalid legend char "${ch}"` };
 		let areaLetter = ch.toLowerCase();
 		if (ch !== ch.toLowerCase()) growAreas.add(areaLetter);
-		let justifySelf = null, alignSelf = null;
+		let mods = null;
 		if (i + 1 < legend.length && legend[i + 1] === "(") {
 			let close = legend.indexOf(")", i + 2);
 			if (close === -1) return { error: `unclosed '(' after "${ch}"` };
-			let mods = legend.substring(i + 2, close);
-			for (let m of mods) {
-				if (SelfJMap[m]) justifySelf = SelfJMap[m];
-				else if (SelfAMap[m]) alignSelf = SelfAMap[m];
-				else return { error: `unknown modifier "${m}" in "${ch}(${mods})"` };
-			}
+			mods = legend.substring(i + 2, close);
 			i = close + 1;
 		} else i++;
 		areas.push(areaLetter);
-		if (justifySelf || alignSelf) areaAlign[areaLetter] = { justifySelf, alignSelf };
+		if (mods) {
+			let parsed = parseAreaMods(mods);
+			if (parsed.justifySelf || parsed.alignSelf)
+				areaAlign[areaLetter] = { justifySelf: parsed.justifySelf, alignSelf: parsed.alignSelf };
+			// store flex + meta props keyed by area letter
+			let props = {};
+			if (parsed.flexBasis != null) props.flexBasis = parsed.flexBasis;
+			if (parsed.flexShrink != null) props.flexShrink = parsed.flexShrink;
+			if (parsed.z != null) props.z = parsed.z;
+			if (parsed.className) props.className = parsed.className;
+			if (parsed.alias) props.alias = parsed.alias;
+			if (Object.keys(props).length) areaProps[areaLetter] = props;
+		}
 	}
-	return { areas, growAreas, areaAlign };
+	return { areas, growAreas, areaAlign, areaProps };
 };
 
 // --- expand char-count shorthand: h12 -> hhhhhhhhhhhh, s3 -> sss, a2b -> aab ---
@@ -140,34 +208,35 @@ let expandCharCounts = (s) => {
 };
 
 // --- parse placement override: letter[col,row] or letter[col,row,z] ---
-// also handles letter(mods)[col,row] where mods are alignment modifiers
-// returns { area, col, row, z, grow, align } or null if not a placement token
+// also handles letter(mods)[col,row] where mods are unified () modifiers
+// returns { area, col, row, z, grow, align, props } or null if not a placement token
 let parsePlacementToken = (token) => {
 	let m = token.match(/^([a-zA-Z])(?:\(([^)]*)\))?\[([^\]]+)\]$/);
 	if (!m) return null;
 	let area = m[1].toLowerCase();
 	let grow = m[1] !== m[1].toLowerCase();
-	let mods = m[2] || null;
+	let modsStr = m[2] || null;
 	let parts = m[3].split(",");
 	if (parts.length < 2 || parts.length > 3) return null;
 	let col = parts[0].trim();
 	let row = parts[1].trim();
-	let z = parts.length === 3 ? parts[2].trim() : null;
-	let toCSS = s => {
-		if (s.includes(":")) return s.split(":").join(" / ");
-		return s;
-	};
-	// parse alignment modifiers
-	let align = null;
-	if (mods) {
-		let justifySelf = null, alignSelf = null;
-		for (let ch of mods) {
-			if (SelfJMap[ch]) justifySelf = SelfJMap[ch];
-			else if (SelfAMap[ch]) alignSelf = SelfAMap[ch];
-		}
-		if (justifySelf || alignSelf) align = { justifySelf, alignSelf };
+	// third slot in [] = legacy z-index, still supported but z in () is preferred
+	let legacyZ = parts.length === 3 ? parseInt(parts[2].trim()) : null;
+	let toCSS = s => s.includes(":") ? s.split(":").join(" / ") : s;
+	// parse unified () mods
+	let align = null, props = {};
+	if (modsStr) {
+		let parsed = parseAreaMods(modsStr);
+		if (parsed.justifySelf || parsed.alignSelf)
+			align = { justifySelf: parsed.justifySelf, alignSelf: parsed.alignSelf };
+		if (parsed.flexBasis != null) props.flexBasis = parsed.flexBasis;
+		if (parsed.flexShrink != null) props.flexShrink = parsed.flexShrink;
+		if (parsed.z != null) props.z = parsed.z;
+		if (parsed.className) props.className = parsed.className;
+		if (parsed.alias) props.alias = parsed.alias;
 	}
-	return { area, grow, col: toCSS(col), row: toCSS(row), z: z != null ? parseInt(z) : null, align };
+	let z = props.z ?? legacyZ;
+	return { area, grow, col: toCSS(col), row: toCSS(row), z, align, props };
 };
 
 // --- extract placement overrides from segments ---
@@ -423,7 +492,7 @@ let parseAutoFlowPattern = (pat) => {
 };
 
 // --- main parser ---
-let parseGridLayout = (input, childCount) => {
+let parseGridLayout = (input, childCount, defaultMode = "grid") => {
 	input = (input || "").trim();
 	if (!input && childCount > 0) input = "*";
 
@@ -438,6 +507,42 @@ let parseGridLayout = (input, childCount) => {
 	let pipeParts = input.split("|").map(s => s.trim());
 	let mainPart = pipeParts[0];
 	let colSizesRaw = pipeParts[1] || null, rowSizesRaw = pipeParts[2] || null;
+
+	// extract floating meta entries (letter(...) tokens) from size segments before size parsing
+	let metaProps = {}; // area -> props merged from all floating meta entries
+	let extractMetaFromStr = (s) => {
+		if (!s) return s;
+		let out = [], buf = "", depth = 0;
+		for (let ch of s) {
+			if (ch === "(" || ch === "[") { depth++; buf += ch; }
+			else if (ch === ")" || ch === "]") { depth--; buf += ch; }
+			else if (depth === 0 && (ch === " " || ch === "\t")) {
+				if (buf) { out.push(buf); buf = ""; }
+			} else buf += ch;
+		}
+		if (buf) out.push(buf);
+		let kept = [];
+		for (let tok of out) {
+			let m = tok.match(/^([a-zA-Z])\(([^)]*)\)$/);
+			if (m && !tok.includes("[")) {
+				let area = m[1].toLowerCase();
+				let parsed = parseAreaMods(m[2]);
+				if (!metaProps[area]) metaProps[area] = {};
+				let p = metaProps[area];
+				if (parsed.justifySelf) p.justifySelf = parsed.justifySelf;
+				if (parsed.alignSelf) p.alignSelf = parsed.alignSelf;
+				if (parsed.flexBasis != null) p.flexBasis = parsed.flexBasis;
+				if (parsed.flexShrink != null) p.flexShrink = parsed.flexShrink;
+				if (parsed.z != null) p.z = parsed.z;
+				if (parsed.className) p.className = p.className ? p.className + " " + parsed.className : parsed.className;
+				if (parsed.alias) p.alias = parsed.alias;
+			} else kept.push(tok);
+		}
+		return kept.join(" ") || null;
+	};
+	colSizesRaw = extractMetaFromStr(colSizesRaw);
+	rowSizesRaw = extractMetaFromStr(rowSizesRaw);
+
 	let colParsed = parseSizeRepeat(colSizesRaw);
 	let rowParsed = parseSizeRepeat(rowSizesRaw);
 	let colSizes = colParsed.sizeStr, rowSizes = rowParsed.sizeStr;
@@ -456,7 +561,11 @@ let parseGridLayout = (input, childCount) => {
 	if (buf) segments.push(buf);
 
 	// extract ? flags (floating position)
-	let flags = { fullWidth: false, fullHeight: false, flowReverse: false, flowDense: false, justifyContent: null, alignContent: null };
+	let flags = {
+		fullWidth: false, fullHeight: false, flowReverse: false, flowDense: false,
+		justifyContent: null, alignContent: null,
+		flexMode: false, flexWrap: false,
+	};
 	let remaining = [];
 	for (let seg of segments) {
 		if (seg.startsWith("?")) {
@@ -465,11 +574,38 @@ let parseGridLayout = (input, childCount) => {
 			if (f.fullHeight) flags.fullHeight = true;
 			if (f.flowReverse) flags.flowReverse = true;
 			if (f.flowDense) flags.flowDense = true;
+			if (f.flexMode) flags.flexMode = true;
+			if (f.flexWrap) flags.flexWrap = true;
 			if (f.justifyContent) flags.justifyContent = f.justifyContent;
 			if (f.alignContent) flags.alignContent = f.alignContent;
 		} else remaining.push(seg);
 	}
 	segments = remaining;
+
+	// extract floating meta entries letter(...) from main segments
+	let cleanedSegsForMeta = [];
+	for (let seg of segments) {
+		let m = seg.match(/^([a-zA-Z])\(([^)]*)\)$/);
+		if (m && !seg.includes("[")) {
+			let area = m[1].toLowerCase();
+			let parsed = parseAreaMods(m[2]);
+			if (!metaProps[area]) metaProps[area] = {};
+			let p = metaProps[area];
+			if (parsed.justifySelf) p.justifySelf = parsed.justifySelf;
+			if (parsed.alignSelf) p.alignSelf = parsed.alignSelf;
+			if (parsed.flexBasis != null) p.flexBasis = parsed.flexBasis;
+			if (parsed.flexShrink != null) p.flexShrink = parsed.flexShrink;
+			if (parsed.z != null) p.z = parsed.z;
+			if (parsed.className) p.className = p.className ? p.className + " " + parsed.className : parsed.className;
+			if (parsed.alias) p.alias = parsed.alias;
+		} else cleanedSegsForMeta.push(seg);
+	}
+	segments = cleanedSegsForMeta;
+
+	// resolve mode: defaultMode < implicit (?W) < explicit (?x)
+	// "auto" mode: flex if wrap/flex flags detected, else grid
+	let mode = defaultMode === "auto" ? "grid" : defaultMode;
+	if (flags.flexWrap || flags.flexMode) mode = "flex";
 
 	// extract placement overrides: letter[col,row] or letter[col,row,z]
 	let { cleaned: cleanedSegs, overrides: placementOverrides } = extractPlacements(segments);
@@ -512,7 +648,7 @@ let parseGridLayout = (input, childCount) => {
 				gapH: null, gapV: null, transpose, expanded: false, flags,
 				explicitSizes: { cols: !!colSizes, rows: !!rowSizes },
 				colRepeat: null, rowRepeat: null, colRepeatSizes: null, rowRepeatSizes: null,
-				placementOverrides,
+				placementOverrides, mode, areaProps: metaProps,
 			};
 		}
 		if (childCount > 0) segments = ["*"];
@@ -578,7 +714,7 @@ let parseGridLayout = (input, childCount) => {
 				gapH: localGapH, gapV: localGapV, transpose, expanded: true, flags,
 				autoFlow: colNum,
 				colRepeat, rowRepeat, colRepeatSizes, rowRepeatSizes,
-				placementOverrides,
+				placementOverrides, mode, areaProps: metaProps,
 			};
 		}
 
@@ -632,7 +768,7 @@ let parseGridLayout = (input, childCount) => {
 			gapH: localGapH, gapV: localGapV, transpose, expanded: true, flags,
 			autoFlow: colNum, childSpans,
 			colRepeat, rowRepeat, colRepeatSizes, rowRepeatSizes,
-			placementOverrides,
+			placementOverrides, mode, areaProps: metaProps,
 		};
 	}
 
@@ -684,8 +820,8 @@ let parseGridLayout = (input, childCount) => {
 			} else {
 				localGapH = parseFloat(segments[gEndIdx - 1]);
 				localGapV = localGapH;
-				}
 			}
+		}
 
 		let colNum = maxCols;
 		let colDefault = flags.justifyContent ? "auto" : "1fr";
@@ -726,7 +862,7 @@ let parseGridLayout = (input, childCount) => {
 			gapH: localGapH, gapV: localGapV, transpose, expanded: true, flags,
 			autoFlow: colNum, childSpans: allSpans,
 			colRepeat, rowRepeat, colRepeatSizes, rowRepeatSizes,
-			placementOverrides,
+			placementOverrides, mode, areaProps: metaProps,
 		};
 	}
 
@@ -739,7 +875,24 @@ let parseGridLayout = (input, childCount) => {
 	// map rows: expand char-counts before processing
 	let legendResult = parseLegend(segments[0]);
 	if (legendResult.error) return legendResult;
-	let { areas, growAreas, areaAlign } = legendResult;
+	let { areas, growAreas, areaAlign, areaProps: legendAreaProps } = legendResult;
+
+	// merge legend areaProps with floating meta entries (meta wins on conflict)
+	let areaProps = { ...legendAreaProps };
+	for (let [area, props] of Object.entries(metaProps)) {
+		let existing = areaProps[area];
+		let merged = { ...existing, ...props };
+		// classNames accumulate rather than overwrite
+		if (existing?.className && props.className)
+			merged.className = existing.className + " " + props.className;
+		areaProps[area] = merged;
+	}
+	// also merge alignment from metaProps into areaAlign
+	for (let [area, props] of Object.entries(metaProps)) {
+		if (props.justifySelf || props.alignSelf) {
+			areaAlign[area] = { ...areaAlign[area], justifySelf: props.justifySelf || areaAlign[area]?.justifySelf, alignSelf: props.alignSelf || areaAlign[area]?.alignSelf };
+		}
+	}
 
 	// inject placement-only areas that aren't already in the legend
 	for (let [name, po] of Object.entries(placementOverrides)) {
@@ -945,7 +1098,7 @@ let parseGridLayout = (input, childCount) => {
 			explicitSizes: { cols: ec, rows: er },
 			repeatInfo: { pattern: repeatAreaList, pinned: [...pinnedAreas], count: repeatCount, staticAreas },
 			colRepeat: null, rowRepeat: null, colRepeatSizes: null, rowRepeatSizes: null,
-			placementOverrides,
+			placementOverrides, mode, areaProps,
 		};
 	}
 
@@ -1047,47 +1200,60 @@ let parseGridLayout = (input, childCount) => {
 		gapH, gapV, transpose, expanded, flags,
 		explicitSizes: { cols: ec, rows: er },
 		colRepeat: null, rowRepeat: null, colRepeatSizes: null, rowRepeatSizes: null,
-		placementOverrides,
+		placementOverrides, mode, areaProps,
 	};
 };
 
-// --- helper: convert parsed result to CSS style object for the grid container ---
+// --- helper: convert parsed result to CSS style object for the container ---
 let toGridStyle = (parsed) => {
 	if (parsed.error) return null;
+	let flex = parsed.mode === "flex";
 
-	// explicit fr in user-written pipe sizes should imply full width/height
-	// but auto-inferred 1fr (from proportional areas or grow letters) should not
 	let es = parsed.explicitSizes || {};
 	let explicitFrCols = es.cols && parsed.colSizes.some(s => s.includes("fr"));
 	let explicitFrRows = es.rows && parsed.rowSizes.some(s => s.includes("fr"));
-	// grow areas generate 1fr tracks — those need container size to distribute into
-	let growFrCols = /*parsed.colSizes.some(s => s.includes("fr")) &&*/ parsed.growAreas.length > 0;
-	let growFrRows = /*parsed.rowSizes.some(s => s.includes("fr")) &&*/ parsed.growAreas.length > 0;
-
-	let style = { display: "grid" };
-
-	if (parsed.templateAreas) {
-		// area-based mode
-		style.gridTemplateAreas = parsed.templateAreas.join(" ");
-	} else {
-		// auto-flow mode — default is row, transpose flips to column, ?f reverses, ?F adds dense
-		let base = parsed.transpose ? "column" : "row";
-		if (parsed.flags.flowReverse) base = base === "row" ? "column" : "row";
-		style.gridAutoFlow = base + (parsed.flags.flowDense ? " dense" : "");
-	}
-
-	style.gridTemplateColumns = parsed.colRepeat
-		? buildRepeatSizes(parsed.colRepeat, parsed.colRepeatSizes)
-		: parsed.colSizes.join(" ");
-	style.gridTemplateRows = parsed.rowRepeat
-		? buildRepeatSizes(parsed.rowRepeat, parsed.rowRepeatSizes)
-		: parsed.rowSizes.join(" ");
-
-	// auto-fill/auto-fit implies full width (or height when transposed)
+	let growFrCols = parsed.growAreas.length > 0;
+	let growFrRows = parsed.growAreas.length > 0;
 	let autoRepeatCols = !!parsed.colRepeat;
 	let autoRepeatRows = !!parsed.rowRepeat;
-	if (growFrCols || explicitFrCols || parsed.flags.fullWidth || autoRepeatCols) style.width = "100%"; else style.width = "fit-content";
-	if (growFrRows || explicitFrRows || parsed.flags.fullHeight || autoRepeatRows) style.height = "100%"; else style.height = "fit-content";
+
+	let style = {};
+
+	if (flex) {
+		// --- flex container ---
+		style.display = "flex";
+		let base = parsed.transpose ? "column" : "row";
+		if (parsed.flags.flowReverse) base += "-reverse";
+		style.flexDirection = base;
+		if (parsed.flags.flexWrap) style.flexWrap = "wrap";
+
+		// in flex mode, colSizes segment = per-item basis (handled in toAreaStyle)
+		// width/height
+		if (growFrCols || explicitFrCols || parsed.flags.fullWidth || autoRepeatCols)
+			style.width = "100%";
+		else style.width = "fit-content";
+		if (growFrRows || explicitFrRows || parsed.flags.fullHeight || autoRepeatRows)
+			style.height = "100%";
+		else style.height = "fit-content";
+	} else {
+		// --- grid container ---
+		style.display = "grid";
+		if (parsed.templateAreas) {
+			style.gridTemplateAreas = parsed.templateAreas.join(" ");
+		} else {
+			let base = parsed.transpose ? "column" : "row";
+			if (parsed.flags.flowReverse) base = base === "row" ? "column" : "row";
+			style.gridAutoFlow = base + (parsed.flags.flowDense ? " dense" : "");
+		}
+		style.gridTemplateColumns = parsed.colRepeat
+			? buildRepeatSizes(parsed.colRepeat, parsed.colRepeatSizes)
+			: parsed.colSizes.join(" ");
+		style.gridTemplateRows = parsed.rowRepeat
+			? buildRepeatSizes(parsed.rowRepeat, parsed.rowRepeatSizes)
+			: parsed.rowSizes.join(" ");
+		if (growFrCols || explicitFrCols || parsed.flags.fullWidth || autoRepeatCols) style.width = "100%"; else style.width = "fit-content";
+		if (growFrRows || explicitFrRows || parsed.flags.fullHeight || autoRepeatRows) style.height = "100%"; else style.height = "fit-content";
+	}
 
 	if (parsed.gapH != null) {
 		style.gap = parsed.gapH === parsed.gapV
@@ -1105,30 +1271,67 @@ let toGridStyle = (parsed) => {
 // --- helper: get style for a specific area ---
 let toAreaStyle = (parsed, areaName, childIdx) => {
 	let style = {};
+	let flex = parsed.mode === "flex";
 	let po = parsed.placementOverrides && parsed.placementOverrides[areaName];
+	let props = parsed.areaProps && parsed.areaProps[areaName];
 
-	if (po) {
-		// explicit line-based placement — overrides grid-area
-		style.gridColumn = po.col;
-		style.gridRow = po.row;
-		if (po.z != null) style.zIndex = po.z;
-	} else if (parsed.templateAreas) {
-		// area-based mode
-		style.gridArea = areaName;
-	} else if (parsed.childSpans && childIdx != null && childIdx < parsed.childSpans.length) {
-		// auto-flow mode with spans
-		let span = parsed.childSpans[childIdx].span;
-		if (span > 1) style.gridColumn = `span ${span}`;
+	if (flex) {
+		// flex item sizing
+		let grow = parsed.growAreas.includes(areaName);
+		if (grow) style.flexGrow = 1; // legend default — sizes-segment fr may override below
+		let basis = props?.flexBasis;
+		if (!basis && childIdx != null) {
+			// in flex mode, | sizes = per-item basis values in flow order
+			// when transposed (column direction), use rowSizes; otherwise colSizes
+			let sizeArr = parsed.transpose ? parsed.rowSizes : parsed.colSizes;
+			if (sizeArr && sizeArr.length) {
+				let raw = sizeArr[childIdx % sizeArr.length];
+				if (raw === "1fr") {
+					style.flexGrow = 1;
+				} else if (/^\d+(\.\d+)?fr$/.test(raw)) {
+					style.flexGrow = parseFloat(raw); // 2fr ? flex-grow: 2, overrides legend grow:1
+				} else if (raw && raw !== "auto") {
+					// minmax in flex = basis~max -> use basis part, set maxWidth/maxHeight
+					if (raw.startsWith("minmax(")) {
+						let inner = raw.slice(7, -1).split(",");
+						basis = inner[0].trim();
+						let cap = inner[1].trim();
+						// 1fr cap = grow freely, no explicit max needed
+						if (cap !== "1fr") {
+							if (parsed.transpose) style.maxHeight = cap;
+							else style.maxWidth = cap;
+						}
+						style.flexGrow = 1; // grow up to cap (or freely if cap is 1fr)
+					} else basis = raw;
+				}
+			}
+		}
+		if (basis) style.flexBasis = basis;
+		if (props?.flexShrink != null) style.flexShrink = props.flexShrink;
+	} else {
+		// grid item placement
+		if (po) {
+			style.gridColumn = po.col;
+			style.gridRow = po.row;
+		} else if (parsed.templateAreas) {
+			style.gridArea = areaName;
+		} else if (parsed.childSpans && childIdx != null && childIdx < parsed.childSpans.length) {
+			let span = parsed.childSpans[childIdx].span;
+			if (span > 1) style.gridColumn = `span ${span}`;
+		}
 	}
-	// else: auto-flow without spans, no style needed (auto-placement)
 
+	// z-index: from areaProps or legacy placement override
+	let z = props?.z ?? po?.z ?? null;
+	if (z != null) style.zIndex = z;
+
+	// alignment: same for both modes (justifySelf not valid in flex but harmless)
 	let align = parsed.areaAlign[areaName];
 	if (align) {
 		if (align.justifySelf) style.justifySelf = align.justifySelf;
 		if (align.alignSelf) style.alignSelf = align.alignSelf;
 	}
-	if (parsed.flags.fullHeight)
-		style.minHeight = "0px";
+	if (parsed.flags.fullHeight) style.minHeight = "0px";
 	return style;
 };
 
