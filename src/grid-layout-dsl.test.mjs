@@ -102,6 +102,31 @@ section("grow areas (uppercase)");
 	ok(r.growAreas.includes("b"), "B → b grows");
 }
 
+section("grow areas: full-span areas don't drive column sizing");
+{
+	// F spans both cols in its row ? should only affect row height, not col widths
+	// B is in col 1 only ? col 1 should be 1fr, col 0 stays auto
+	let r = p("haBF hh ab* ff 8", 6);
+	eq(r.colSizes, ["auto", "1fr"], "haBF repeat: full-span F doesn't widen col 0");
+	eq(r.rowSizes, ["auto", "1fr", "1fr", "1fr"], "haBF repeat: F row is 1fr");
+}
+{
+	// without uppercase F: same col sizing, F row is auto
+	let r = p("haBf hh ab* ff 8", 6);
+	eq(r.colSizes, ["auto", "1fr"], "haBf repeat: col sizing unchanged");
+	eq(r.rowSizes, ["auto", "1fr", "1fr", "auto"], "haBf repeat: f row is auto");
+}
+{
+	// single area A: full-span, but fallback must still give 1fr (no other grow cols to defer to)
+	let r = p("A", 1);
+	eq(r.colSizes, ["1fr"], "A: single full-span area still gets 1fr");
+}
+{
+	// two full-span grow areas stacked: fallback → both cols 1fr
+	let r = p("hF hh ff 8", 2);
+	ok(r.colSizes.every(s => s === "1fr"), "hF: full-span only → fallback all 1fr");
+}
+
 section("per-area alignment modifiers");
 {
 	let r = p("a(e)B(sC)", 2);
@@ -391,8 +416,16 @@ section("error handling");
 	ok(r.error, "row length mismatch: error");
 }
 {
+	// legend-only duplicate: "aa" = area 'a' spans 2 cols, one children map to 'a'
 	let r = p("aa", 2);
-	ok(r.error, "duplicate area in legend: error");
+	assert(!r.error, "legend-only duplicate: no error");
+	eq(r.templateAreas, ['"a a"'], "legend-only duplicate: a spans 2 cols");
+	eq(r.areas, ["a"], "legend-only duplicate: a consumes one slot");
+}
+{
+	// duplicate in legend WITH explicit map rows: still an error (ambiguous child mapping)
+	let r = p("aa aa", 2);
+	ok(r.error, "duplicate area in legend with explicit map: error");
 }
 {
 	// a forms an L-shape: (0,0), (1,0), (1,1) but not (0,1) → not rectangular

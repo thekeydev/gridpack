@@ -918,13 +918,22 @@ let parseGridLayout = (input, childCount, defaultMode = "grid") => {
 	}
 
 	let mapRows = segments.slice(1, endIdx);
-	if (mapRows.length == 0) mapRows = [areas.join("")];
+	let legendOnly = mapRows.length == 0;
+	if (legendOnly) mapRows = [areas.join("")];
+	if (legendOnly) {
+		mapRows = [areas.join("")];
+		// dedupe for child mapping — repeated letters define column spans, not extra slots
+		// e.g. \"FOO\" → areas [\'f\',\'o\'], template \"f o o\" (o spans 2 cols), 2 children not 3
+		areas = [...new Set(areas)];
+	}
 
 	// expand char-counts in map rows: s3 -> sss, h12 -> hhhhhhhhhhhh
+	// non-repeat rows are lowercased — uppercase has no meaning there (unlike * rows where
+	// uppercase = pinned area, e.g. "Sa*" pins 's', repeats 'a')
 	mapRows = mapRows.map(row => {
 		// preserve trailing * for repeat detection
 		let suffix = row.endsWith("*") ? "*" : "";
-		let body = suffix ? row.slice(0, -1) : row;
+		let body = suffix ? row.slice(0, -1) : row.toLowerCase();
 		return expandCharCounts(body) + suffix;
 	});
 
@@ -1026,14 +1035,24 @@ let parseGridLayout = (input, childCount, defaultMode = "grid") => {
 
 		let colSizeList = colSizes
 			? fillSizes(colSizes, colCount, "auto")
-			: Array.from({ length: colCount }, (_, c) => {
-				for (let row of tokenRows) {
-					let name = row[c];
-					let base = name.replace(/\d+$/, "");
-					if (expandedGrow.has(name) || expandedGrow.has(base)) return "1fr";
+			: (() => {
+				// a grow area only drives a column to 1fr if it doesn't span all columns in its row.
+				// full-width grow areas (e.g. a footer spanning all cols) only affect row sizing.
+				// fallback: if no selective-grow column exists, promote full-span cols instead.
+				let sizes = Array(colCount).fill(null);
+				let hasFullSpan = Array(colCount).fill(false);
+				for (let c = 0; c < colCount; c++) {
+					for (let row of tokenRows) {
+						let name = row[c], base = name.replace(/\d+$/, "");
+						if (!expandedGrow.has(name) && !expandedGrow.has(base)) continue;
+						if (row.every(cell => cell.replace(/\d+$/, "") === base)) hasFullSpan[c] = true;
+						else { sizes[c] = "1fr"; break; }
+					}
 				}
-				return "auto";
-			});
+				if (sizes.every(s => s === null))
+					for (let c = 0; c < colCount; c++) if (hasFullSpan[c]) sizes[c] = "1fr";
+				return sizes.map(s => s ?? "auto");
+			})();
 
 		let totalRowCount = tokenRows.length;
 		let rowSizeList = [];
@@ -1103,10 +1122,15 @@ let parseGridLayout = (input, childCount, defaultMode = "grid") => {
 	}
 
 	// --- non-repeat path ---
+	// skip duplicate check for legend-only layouts — repeated letters mean a spanning area
+	// (e.g. "FOO" ? f spans 1 col, o spans 2). when explicit map rows are given, duplicates
+	// in the legend are ambiguous (which child slot maps where?), so we still error there.
 	let seen = new Set();
-	for (let ch of areas) {
-		if (seen.has(ch)) return { error: `duplicate area "${ch}" in legend` };
-		seen.add(ch);
+	if (!legendOnly) {
+		for (let ch of areas) {
+			if (seen.has(ch)) return { error: `duplicate area "${ch}" in legend` };
+			seen.add(ch);
+		}
 	}
 
 	let colCount = mapRows[0].length;
@@ -1133,7 +1157,7 @@ let parseGridLayout = (input, childCount, defaultMode = "grid") => {
 		for (let r = minR; r <= maxR; r++) {
 			for (let c = minC; c <= maxC; c++) {
 				if (mapRows[r][c] !== area)
-					return { error: `area "${area}" not rectangular (row ${r + 1}, col ${c + 1})` };
+					return { error: `area "${area}" not rectangular/contiguous (row ${r + 1}, col ${c + 1})` };
 			}
 		}
 	}
@@ -1153,13 +1177,21 @@ let parseGridLayout = (input, childCount, defaultMode = "grid") => {
 	}
 	let colSizeList = colSizes
 		? fillSizes(colSizes, colCount, proportional ? "1fr" : "auto")
-		: Array.from({ length: colCount }, (_, c) => {
-			// if any area repeats in this column's row, treat as proportional -> 1fr
-			for (let row of mapRows) {
-				if (growAreas.has(row[c])) return "1fr";
+		: (() => {
+			let sizes = Array(colCount).fill(null);
+			let hasFullSpan = Array(colCount).fill(false);
+			for (let c = 0; c < colCount; c++) {
+				for (let row of mapRows) {
+					let ch = row[c];
+					if (!growAreas.has(ch)) continue;
+					if ([...row].every(cell => cell === ch)) hasFullSpan[c] = true;
+					else { sizes[c] = "1fr"; break; }
+				}
 			}
-			return proportional ? "1fr" : "auto";
-		});
+			if (sizes.every(s => s === null))
+				for (let c = 0; c < colCount; c++) if (hasFullSpan[c]) sizes[c] = "1fr";
+			return sizes.map(s => s ?? (proportional ? "1fr" : "auto"));
+		})();
 
 	let rowSizeList = rowSizes
 		? fillSizes(rowSizes, mapRows.length, "auto")

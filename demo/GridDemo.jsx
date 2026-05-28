@@ -4,12 +4,6 @@ import { parseGridLayout, toGridStyle } from "../src/grid-layout-dsl.js";
 
 let Style = ({ children }) => <style>{children}</style>
 Style.__notAComponent = true;
-let Box = ({ c = 0, children, style }) => <div className={`demo-box c${c % 8}`} style={style}>{children}</div>
-
-// --- children builders ---
-let boxes = (labels) => labels.map((l, i) => <Box key={i} c={i}>{l}</Box>);
-let loremItems = (n) => Array.from({ length: n }, (_, i) =>
-	<div key={i} style={{ padding: "8px 12px", borderBottom: "1px solid rgba(255,255,255,0.05)", fontSize: 12, color: "#888" }}>Item {i + 1} — Lorem ipsum dolor sit amet</div>);
 
 // ============================================================
 // --- presets ---
@@ -264,62 +258,6 @@ let PlaygroundStyles = () =>
 		.pg-reset.dirty { color: #f78c6c; border-color: #f78c6c60; }
 	`}</Style>;
 
-// --- desktop playground ---
-let DesktopPlayground = () => {
-	let s = usePlaygroundState();
-	let [vars2, setVars2] = React.useState({ sb: 260 });
-
-	return <Grid layout="pC pc ?wh | {sb}#" vars={vars2} onVarsChange={setVars2} extensions={[
-		scrollable({ area: ["p", "c"] }), splitPane({ var: "sb", edge: "p:e", min: 80, max: 300 })
-	]}>
-		<PlaygroundStyles />
-
-		{/* --- left panel --- */}
-		<div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-			<div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingRight: 10 }}>
-				<div className="pg-h2">Layout</div>
-				<button className={`pg-reset ${s.isDirty ? "dirty" : ""}`} onClick={s.resetPreset} title="Reset to preset default">reset</button>
-			</div>
-			<div style={{ padding: "0 10px 4px" }}>
-				<textarea className="pg-input" rows={3} spellCheck={false} value={s.layout} onChange={e => s.setLayout(e.target.value)} />
-			</div>
-			<ParamControls preset={s.preset} params={s.params} setParams={s.setParams} vars={s.vars} setVars={s.setVars} />
-			<div style={{ padding: "0 10px 4px", display: "flex", gap: 10 }}>
-				<label className="pg-chk"><input type="checkbox" checked={s.showGrid} onChange={e => s.setShowGrid(e.target.checked)} /> grid overlay</label>
-			</div>
-			{s.preset.info && <div style={{ padding: "2px 10px 4px", fontSize: 10, color: "#f78c6c" }}>{s.preset.info}</div>}
-
-			<div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingRight: 10 }}>
-				<div className="pg-h2">Presets</div>
-				<div style={{ display: "flex", gap: 2 }}>
-					<button className="pg-nav-btn" style={{ fontSize: 12, padding: "4px 8px" }} onClick={s.prevPreset} title="Previous">?</button>
-					<button className="pg-nav-btn" style={{ fontSize: 12, padding: "4px 8px" }} onClick={s.nextPreset} title="Next">?</button>
-				</div>
-			</div>
-			<PresetList presetIdx={s.presetIdx} selectPreset={s.selectPreset} />
-		</div>
-
-		{/* --- right panel --- */}
-		<div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-			<div className="pg-h2" style={{ display: "flex", gap: 8, alignItems: "center" }}>
-				Preview <span style={{ color: "#fff8", fontSize: 9 }}>{s.preset.cat} / {s.preset.name}</span>
-			</div>
-			<div style={{ padding: "0 12px 8px", flexShrink: 0 }}>
-				<div style={{ width: s.preset.w || "100%", height: s.preset.h || "auto", minHeight: 20, maxWidth: "100%", border: "1px dashed #2a2a4a", borderRadius: 4, position: "relative", overflow: "hidden", resize: "both" }}>
-					<Grid layout={s.layout} vars={s.allVars} onVarsChange={s.setVars} extensions={s.extensions}
-						style={{ ...(s.preset.gridStyle || {}) }}
-						{...s.responsiveProps}>
-						{s.children}
-					</Grid>
-				</div>
-				{s.parsed.error && <div style={{ color: "#ff5370" }}>Error: {s.parsed.error}</div>}
-			</div>
-			<GuidePanel preset={s.preset} parsed={s.parsed} cssLines={s.cssLines} extSummary={s.extSummary}
-				responsiveProps={s.responsiveProps} panel={s.panel} setPanel={s.setPanel} />
-		</div>
-	</Grid>;
-};
-
 let MobilePlayground = () => {
 	let s = usePlaygroundState();
 	let [v, setV] = React.useState({ nw: 200, w: 20, h: 400 });
@@ -466,8 +404,6 @@ let useIsMobile = () => {
 	}, []);
 	return mobile;
 };
-
-let Playground = () => useIsMobile() ? <MobilePlayground /> : <DesktopPlayground />;
 
 // ============================================================
 // --- app ---
