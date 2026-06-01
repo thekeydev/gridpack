@@ -410,13 +410,13 @@ let useIsMobile = () => {
 // ============================================================
 
 import LandingPage from "./LandingPage";
-import Docs from "./Docs";
+import Reference from "./Reference";
 import OgImage from "./OgImage";
 
 export default function App() {
 	let [tab,setTab] = React.useState("landing");
 	let [mounted,setMounted] = React.useState({ landing: true });
-	let tabList = [["Welcome","landing"], ["Playground","playground"], ["Docs","docs"]];
+	let tabList = [["Welcome","landing"], ["Playground","playground"], ["Reference","reference"]];
 	if (document.location.hash=="#og:image" && tab!="ogimage")
 		setTab("ogimage");
 
@@ -469,7 +469,7 @@ export default function App() {
 		<div style={{ overflow: "hidden", height: "100%", minWidth: 0 }}>
 			<div style={show("landing")}>{mounted.landing && <LandingPage onNavigate={setTab} />}</div>
 			<div style={show("playground")}>{mounted.playground && <MobilePlayground />}</div>
-			<div style={show("docs")}>{mounted.docs && <Docs />}</div>
+			<div style={show("reference")}>{mounted.reference && <Reference />}</div>
 			{tab == "ogimage" && <OgImage />}
 		</div>
 	</Grid>
