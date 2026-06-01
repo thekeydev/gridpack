@@ -96,15 +96,15 @@ let GuidePanel = ({ preset, parsed, cssLines, extSummary, responsiveProps, panel
 		tabs.push(["source", "Source"]);
 	let source = <div style={{ marginTop: 8, flex: 1 }}>
 		{preset.src
-			? <pre style={{ background: "#0a0a18", border: "1px solid #2a2a4a", borderRadius: 4, padding: 12, color: "#b8b8d0", fontSize: 11, lineHeight: 1.7, margin: 0, whiteSpace: "pre", wordBreak: "break-word", tabSize: 4 }}>{preset.src}</pre>
-			: <div style={{ color: "#555", fontSize: 12, padding: 8 }}>No source example for this preset.</div>
+			? <pre style={{ background: "#0a0a18", border: "1px solid #686880", borderRadius: 4, padding: 12, color: "#b8b8d0", fontSize: 11, lineHeight: 1.7, margin: 0, whiteSpace: "pre", wordBreak: "break-word", tabSize: 4 }}>{preset.src}</pre>
+			: <div style={{ color: "#999", fontSize: 12, padding: 8 }}>No source example for this preset.</div>
 		}
 		{Object.keys(responsiveProps).length > 0 && <div style={{ marginTop: 8 }}>
 			<div style={{ fontSize: 10, color: "#c792ea", textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>Responsive breakpoints</div>
 			{Object.entries(responsiveProps).map(([bp, val]) =>
 				<div key={bp} style={{ fontSize: 11, marginBottom: 2 }}>
 					<span style={{ color: "#f78c6c" }}>{bp}</span>
-					<span style={{ color: "#555" }}>{" = "}</span>
+					<span style={{ color: "#999" }}>{" = "}</span>
 					<span style={{ color: "#c3e88d" }}>"{val}"</span>
 				</div>
 			)}
@@ -155,7 +155,7 @@ let GuidePanel = ({ preset, parsed, cssLines, extSummary, responsiveProps, panel
 						{parsed.flags?.alignContent && <div><span className="k">align: </span><span className="v">{parsed.flags.alignContent}</span></div>}
 						<div><span className="k">extensions: </span><span className="v">{extSummary}</span></div>
 						{Object.keys(parsed.vars || {}).length > 0 && <div><span className="k">vars: </span><span className="v">{JSON.stringify(parsed.vars)}</span></div>}
-						<div style={{ borderTop: "1px solid #2a2a4a", margin: "6px 0 4px", paddingTop: 4 }}><span className="k">css:</span></div>
+						<div style={{ borderTop: "1px solid #686880", margin: "6px 0 4px", paddingTop: 4 }}><span className="k">css:</span></div>
 						<pre style={{ color: "#888", fontSize: 10, margin: 0, whiteSpace: "pre" }}>{"." + (preset.name.toLowerCase().replace(/\s+/g, "-")) + " {\n" + cssLines.join("\n") + "\n}"}</pre>
 					</>
 				}
@@ -215,7 +215,7 @@ let PresetList = ({ presetIdx, selectPreset }) =>
 // --- shared styles injected once ---
 let PlaygroundStyles = () =>
 	<Style>{`
-		.pg-input { width: 100%; background: #0f0f23; border: 1px solid #2a2a4a; border-radius: 4px; color: #c3e88d; font-family: inherit; font-size: 13px; padding: 8px 10px; resize: none; outline: none; line-height: 1.5; }
+		.pg-input { width: 100%; background: #0f0f23; border: 1px solid #557; border-radius: 4px; color: #c3e88d; font-family: inherit; font-size: 13px; padding: 8px 10px; resize: none; outline: none; line-height: 1.5; }
 		.pg-input:focus { border-color: #7fdbca; }
 		.pg-h2 { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #fff; padding: 8px 10px 4px; }
 		.pg-cat { font-size: 9px; color: #fff; text-transform: uppercase; letter-spacing: 1px; padding: 6px 8px 2px; }
@@ -226,10 +226,10 @@ let PlaygroundStyles = () =>
 		.pg-row label { font-size: 12px; color: #9cc; min-width: 55px; }
 		.pg-chk { display: flex; align-items: center; gap: 4px; font-size: 12px; color: #9cc; cursor: pointer; }
 		.pg-chk input { accent-color: #7fdbca; }
-		.pg-dbg { background: #0f0f23; border: 1px solid #2a2a4a; border-radius: 4px; padding: 8px; font-size: 11px; line-height: 1.6; overflow: auto; }
+		.pg-dbg { background: #0f0f23; border: 1px solid #686880; border-radius: 4px; padding: 8px; font-size: 11px; line-height: 1.6; overflow: auto; }
 		.pg-dbg .k { color: #c792ea; } .pg-dbg .v { color: #c3e88d; }
-		.pg-tabs { display: flex; gap: 0; border-bottom: 1px solid #2a2a4a; margin: 0 12px; }
-		.pg-tab { background: none; border: none; border-bottom: 2px solid transparent; color: #555; font-family: inherit; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; padding: 6px 10px; cursor: pointer; transition: all 0.15s; }
+		.pg-tabs { display: flex; gap: 0; border-bottom: 1px solid #686880; margin: 0 12px; }
+		.pg-tab { background: none; border: none; border-bottom: 2px solid transparent; color: #999; font-family: inherit; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; padding: 6px 10px; cursor: pointer; transition: all 0.15s; }
 		.pg-tab:hover { color: #999; }
 		.pg-tab.act { color: #7fdbca; border-bottom-color: #7fdbca; }
 		.pg-guide { padding: 10px 0; font-size: 12px; line-height: 1.7; color: #999; }
@@ -243,17 +243,17 @@ let PlaygroundStyles = () =>
 		.pg-try li code { color: #c3e88d; background: #0f0f23; padding: 1px 4px; border-radius: 2px; font-size: 10px; }
 
 		/* --- preset nav --- */
-		.pg-preset-nav { display: flex; align-items: center; gap: 0; border-top: 1px solid #2a2a4a; background: #0f0f1a; flex-shrink: 0; }
+		.pg-preset-nav { display: flex; align-items: center; gap: 0; border-top: 1px solid #686880; background: #0f0f1a; flex-shrink: 0; }
 		.pg-nav-btn { background: none; border: none; color: #7fdbca; font-family: inherit; font-size: 16px; padding: 8px 14px; cursor: pointer; flex-shrink: 0; transition: background 0.1s; line-height: 1; }
 		.pg-nav-btn:hover { background: #7fdbca18; }
 		.pg-nav-btn:active { background: #7fdbca28; }
 		.pg-nav-center { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 6px 0; overflow: hidden; }
-		.pg-nav-cat { font-size: 9px; color: #555; text-transform: uppercase; letter-spacing: 1px; }
+		.pg-nav-cat { font-size: 9px; color: #999; text-transform: uppercase; letter-spacing: 1px; }
 		.pg-nav-name { font-size: 12px; color: #ccc; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
-		.pg-nav-count { font-size: 9px; color: #444; }
+		.pg-nav-count { font-size: 9px; color: #999; }
 
 		/* --- reset btn --- */
-		.pg-reset { background: none; border: 1px solid #2a2a4a; border-radius: 3px; color: #555; font-family: inherit; font-size: 10px; padding: 2px 7px; cursor: pointer; transition: all 0.1s; line-height: 1.6; }
+		.pg-reset { background: none; border: 1px solid #686880; border-radius: 3px; color: #999; font-family: inherit; font-size: 10px; padding: 2px 7px; cursor: pointer; transition: all 0.1s; line-height: 1.6; }
 		.pg-reset:hover { color: #f78c6c; border-color: #f78c6c60; background: #f78c6c10; }
 		.pg-reset.dirty { color: #f78c6c; border-color: #f78c6c60; }
 	`}</Style>;
@@ -266,11 +266,11 @@ let MobilePlayground = () => {
 		<PlaygroundStyles />
 		<Style>{`
 			.pg-mobile-scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
-			.pg-drag-handle { height: 18px; display: flex; align-items: center; justify-content: center; cursor: ns-resize; background: #0f0f1a; border-top: 1px solid #2a2a4a; flex-shrink: 0; touch-action: none; }
+			.pg-drag-handle { height: 18px; display: flex; align-items: center; justify-content: center; cursor: ns-resize; background: #0f0f1a; border-top: 1px solid #686880; flex-shrink: 0; touch-action: none; }
 			.pg-drag-handle::after { content: ""; display: block; width: 32px; height: 3px; border-radius: 2px; background: #2a2a5a; }
 			.pg-drag-handle:hover::after, .pg-drag-handle:active::after { background: #7fdbca60; }
 			.pg-mobile-section { padding: 0 10px; border-bottom: 1px solid #1a1a2e; }
-			.pg-mobile-label { font-size: 9px; text-transform: uppercase; letter-spacing: 1px; color: #444; padding: 8px 0 4px; }
+			.pg-mobile-label { font-size: 9px; text-transform: uppercase; letter-spacing: 1px; color: #999; padding: 8px 0 4px; }
 		`}</Style>
 		<style>{css}</style>
 		<Grid
@@ -448,14 +448,14 @@ export default function App() {
 			*/
 			height: 100%; width: 100%;
 			}
-			.c0 { background: #1e3a5f; color: #7fdbca; border: 1px solid #2a5a8f; }
-			.c1 { background: #3a1e5f; color: #c792ea; border: 1px solid #5a2a8f; }
-			.c2 { background: #1e5f3a; color: #c3e88d; border: 1px solid #2a8f5a; }
-			.c3 { background: #5f3a1e; color: #f78c6c; border: 1px solid #8f5a2a; }
-			.c4 { background: #5f1e3a; color: #ff5370; border: 1px solid #8f2a5a; }
-			.c5 { background: #3a5f1e; color: #dcedc8; border: 1px solid #5a8f2a; }
-			.c6 { background: #1e5f5f; color: #80cbc4; border: 1px solid #2a8f8f; }
-			.c7 { background: #5f5f1e; color: #ffeb3b; border: 1px solid #8f8f2a; }
+			.c0 { background: #1e3a5f; color: #7fdbca; border: 1px solid rgba(255,255,255,0.25); }
+			.c1 { background: #3a1e5f; color: #c792ea; border: 1px solid rgba(255,255,255,0.25); }
+			.c2 { background: #1e5f3a; color: #c3e88d; border: 1px solid rgba(255,255,255,0.25); }
+			.c3 { background: #5f3a1e; color: #ff9e80; border: 1px solid rgba(255,255,255,0.25); }
+			.c4 { background: #5f1e3a; color: #ff7385; border: 1px solid rgba(255,255,255,0.25); }
+			.c5 { background: #3a5f1e; color: #dcedc8; border: 1px solid rgba(255,255,255,0.25); }
+			.c6 { background: #1e5f5f; color: #9edcd6; border: 1px solid rgba(255,255,255,0.25); }
+			.c7 { background: #5f5f1e; color: #ffeb3b; border: 1px solid rgba(255,255,255,0.25); }
 		`}</Style>
 		<div style={{ padding: "12px", background: "#16213e", borderBottom: "1px solid #2a2a4a", display: "flex", alignItems: "center", gap: 8 }}>
 			<svg width="28" height="28" viewBox="0 0 56 56"><path fill="#7fdbca" d=
@@ -463,7 +463,7 @@ export default function App() {
 			/></svg>
 			<span style={{ fontSize: 18, fontWeight: 700, color: "#7fdbca", marginRight: 8 }}>gridpack</span>
 			{tabList.map(([name,tabId]) =>
-				<button key={name} onClick={() => setTab(tabId)} style={{ background: "none", border: "none", color: tab==tabId ? "#7fdbca" : "#476", fontFamily: "inherit", fontSize: 14, cursor: "pointer", borderBottom: tab==tabId ? "2px solid #7fdbca" : "2px solid transparent", padding: "4px 8px" }}>{name}</button>
+				<button key={name} onClick={() => setTab(tabId)} style={{ background: "none", border: "none", color: tab==tabId ? "#8dc" : "#8aa", fontFamily: "inherit", fontSize: 14, cursor: "pointer", borderBottom: tab==tabId ? "2px solid #7fdbca" : "2px solid transparent", padding: "4px 8px" }}>{name}</button>
 			)}
 		</div>
 		<div style={{ overflow: "hidden", height: "100%", minWidth: 0 }}>

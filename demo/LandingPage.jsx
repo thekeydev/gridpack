@@ -78,13 +78,18 @@ let HeroShowcase = () => {
 	return <>
 		{/* editable layout string */}
 		<div style={{ position: "relative", marginBottom: 16 }}>
-			<input type="text" value={editLayout} onChange={onChange} onFocus={onFocus} onBlur={onBlur}
-				spellCheck={false} className="gp-mono" style={{
-					width: "100%", background: "rgba(0,0,0,0.3)", border: "1px solid rgba(127,219,202,0.15)",
-					borderRadius: 6, color: "#c3e88d", fontFamily: "inherit",
-					fontSize: "clamp(16px, 3vw, 28px)", fontWeight: 600,
-					padding: "12px 16px", outline: "none", caretColor: "#7fdbca",
-				}} />
+			<label>
+				<span className="gp-mono" style={{ fontSize: 10, color: "#999", marginBottom: 8, display: "inline-block" }}>
+					Layout String
+				</span>
+				<input type="text" value={editLayout} onChange={onChange} onFocus={onFocus} onBlur={onBlur}
+					spellCheck={false} className="gp-mono" style={{
+						width: "100%", background: "rgba(0,0,0,0.3)", border: "1px solid rgba(127,219,202,0.15)",
+						borderRadius: 6, color: "#c3e88d", fontFamily: "inherit",
+						fontSize: "clamp(16px, 3vw, 28px)", fontWeight: 600,
+						padding: "12px 16px", outline: "none", caretColor: "#7fdbca",
+					}} />
+			</label>
 			{!isEditing && <div style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)",
 				fontSize: 10, color: "#999", pointerEvents: "none" }} className="gp-mono">
 				{sc.label} · {idx + 1}/{showcases.length}
@@ -206,7 +211,7 @@ let LandingPage = ({ onNavigate }) => {
 				color: #e8e8f0; letter-spacing: -0.5px; margin-bottom: 12px;
 			}
 			.gp-h2 em { font-style: normal; color: #7fdbca; }
-			.gp-sub { font-size: clamp(14px, 2vw, 18px); color: #666680; line-height: 1.6; max-width: 560px; }
+			.gp-sub { font-size: clamp(14px, 2vw, 18px); color: #8888a0; line-height: 1.6; max-width: 560px; }
 			.gp-tag {
 				display: inline-block; font-family: var(--font-mono);
 				font-size: 11px; color: #7fdbca; background: rgba(127,219,202,0.08);
@@ -252,7 +257,7 @@ let LandingPage = ({ onNavigate }) => {
 			.gp-fcard:hover { border-color: rgba(127,219,202,0.2); background: rgba(127,219,202,0.03); }
 			.gp-fcard-icon { font-size: 24px; margin-bottom: 12px; }
 			.gp-fcard-title { font-family: var(--font-mono); font-size: 14px; font-weight: 700; color: #e8e8f0; margin-bottom: 8px; }
-			.gp-fcard-desc { font-size: 13px; color: #666680; line-height: 1.5; }
+			.gp-fcard-desc { font-size: 13px; color: #8888a0; line-height: 1.5; }
 			.gp-fcard-code {
 				display: block; margin-top: 12px; font-family: var(--font-mono);
 				font-size: 11px; color: #c3e88d; background: rgba(0,0,0,0.3);
@@ -277,14 +282,14 @@ let LandingPage = ({ onNavigate }) => {
 			.gp-codeblock pre .kw { color: #c792ea; }
 			.gp-codeblock pre .str { color: #c3e88d; }
 			.gp-codeblock pre .fn { color: #82aaff; }
-			.gp-codeblock pre .cm { color: #555; }
+			.gp-codeblock pre .cm { color: #888; }
 			.gp-codeblock pre .tag { color: #f07178; }
 			.gp-codeblock pre .attr { color: #ffcb6b; }
 
 			/* --- comparison --- */
 			.gp-compare-label {
 				font-family: var(--font-mono); font-size: 10px;
-				color: #555; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;
+				color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;
 			}
 
 			/* --- live demo frame --- */
@@ -294,7 +299,7 @@ let LandingPage = ({ onNavigate }) => {
 			}
 
 			/* --- footer --- */
-			.gp-footer { text-align: center; padding: 40px 20px; color: #666; font-size: 12px; }
+			.gp-footer { text-align: center; padding: 40px 20px; color: #888; font-size: 12px; }
 			.gp-footer a { color: #7fdbca; text-decoration: none; }
 
 			/* --- token colors for inline --- */
@@ -379,7 +384,7 @@ let LandingPage = ({ onNavigate }) => {
 				].map(([tok, desc, color], i) =>
 					<div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 0" }}>
 						<span className="gp-mono" style={{ color, fontSize: 18, fontWeight: 700, width: 48, textAlign: "center" }}>{tok}</span>
-						<span style={{ fontSize: 13, color: "#666680" }}>{desc}</span>
+						<span style={{ fontSize: 13, color: "#8888a0" }}>{desc}</span>
 					</div>
 				)}
 			</Grid>
@@ -441,7 +446,7 @@ let LandingPage = ({ onNavigate }) => {
 				].map((ext, i) =>
 					<div key={i} style={{ padding: "16px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
 						<div className="gp-mono" style={{ fontSize: 13, fontWeight: 600, color: "#c792ea", marginBottom: 4 }}>{ext.name}</div>
-						<div style={{ fontSize: 13, color: "#666680", marginBottom: 6 }}>{ext.desc}</div>
+						<div style={{ fontSize: 13, color: "#8888a0", marginBottom: 6 }}>{ext.desc}</div>
 						<code className="gp-mono" style={{ fontSize: 11, color: "#c3e88d", background: "rgba(0,0,0,0.3)", padding: "3px 8px", borderRadius: 3 }}>{ext.code}</code>
 					</div>
 				)}

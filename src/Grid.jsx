@@ -9,7 +9,7 @@ let BreakpointNames = ["xs", "sm", "md", "lg", "xl"];
 let useContainerWidth = (ref) => {
 	let [width, setWidth] = React.useState(0);
 	React.useEffect(() => {
-		let el = ref.current;
+		let el = ref.current?.parentElement;
 		if (!el) return;
 		setWidth(el.clientWidth);
 		let observer = new ResizeObserver(entries => {

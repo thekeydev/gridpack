@@ -584,9 +584,11 @@ let parseGridLayout = (input, childCount, defaultMode = "grid") => {
 
 	// extract floating meta entries letter(...) from main segments
 	let cleanedSegsForMeta = [];
+	let firstMetaSeg = null;
 	for (let seg of segments) {
 		let m = seg.match(/^([a-zA-Z])\(([^)]*)\)$/);
 		if (m && !seg.includes("[")) {
+			if (!firstMetaSeg) firstMetaSeg = seg; // remember in case we need it as legend
 			let area = m[1].toLowerCase();
 			let parsed = parseAreaMods(m[2]);
 			if (!metaProps[area]) metaProps[area] = {};
@@ -601,6 +603,10 @@ let parseGridLayout = (input, childCount, defaultMode = "grid") => {
 		} else cleanedSegsForMeta.push(seg);
 	}
 	segments = cleanedSegsForMeta;
+	// if no legend candidate remains after meta extraction (empty or only gap numbers),
+	// restore the first extracted meta as legend — parseLegend handles inline mods natively
+	if (firstMetaSeg && !segments.some(s => !/^\d+(\.\d+)?$/.test(s)))
+		segments.unshift(firstMetaSeg);
 
 	// resolve mode: defaultMode < implicit (?W) < explicit (?x)
 	// "auto" mode: flex if wrap/flex flags detected, else grid

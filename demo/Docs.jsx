@@ -8,19 +8,19 @@ export default function Docs() {
 	let F = ({ children }) => <span style={{ color: "#f78c6c" }}>{children}</span>;
 
 	let Section = ({ title, children }) => <div style={{ marginBottom: 20 }}>
-		<div style={{ fontSize: 13, fontWeight: 700, color: "#7fdbca", marginBottom: 8, borderBottom: "1px solid #2a2a4a", paddingBottom: 4 }}>{title}</div>
+		<div style={{ fontSize: 13, fontWeight: 700, color: "#7fdbca", marginBottom: 8, borderBottom: "1px solid #686880", paddingBottom: 4 }}>{title}</div>
 		<div style={{ fontSize: 12, lineHeight: 1.8 }}>{children}</div>
 	</div>;
 
 	let Ex = ({ code, desc }) => <div style={{ display: "flex", gap: 12, marginBottom: 4 }}>
 		<code style={{ color: "#c3e88d", background: "#0f0f23", padding: "1px 6px", borderRadius: 3, whiteSpace: "nowrap", flexShrink: 0 }}>{code}</code>
-		<span style={{ color: "#888" }}>{desc}</span>
+		<span style={{ color: "#999" }}>{desc}</span>
 	</div>;
 
 	return <Grid layout="16 | *520" style={{ padding: 8, overflow: "auto", width: "100%", height: "100%" }}>
 		<div style={{ maxWidth: 700, padding: "0 4px", lineHeight: 1.8 }}>
 			<Section title="Layout String Grammar">
-				<code style={{ color: "#c3e88d", display: "block", background: "#0f0f23", padding: 10, borderRadius: 4, marginBottom: 10, border: "1px solid #2a2a4a", lineHeight: 1.6 }}>
+				<code style={{ color: "#c3e88d", display: "block", background: "#0f0f23", padding: 10, borderRadius: 4, marginBottom: 10, border: "1px solid #686880", lineHeight: 1.6 }}>
 					[<F>|</F>] [<K>legend</K> | <F>*</F> | <F>*N</F> | <F>*pattern</F>] [<K>rows</K>] [<F>gap</F> [<F>gap</F>]] [<F>?flags</F>] [<K>placements</K>] [<F>|</F> <K>col-sizes</K> [<F>|</F> <K>row-sizes</K>]]
 				</code>
 			</Section>
@@ -46,17 +46,17 @@ export default function Docs() {
 				<Ex code="{var}" desc="Template variable — replaced from vars prop" />
 			</Section>
 			<Section title="Auto-Flow Modes">
-				<div style={{ color: "#888", marginBottom: 4 }}>When no map rows are given, children are auto-placed in a grid.</div>
+				<div style={{ color: "#999", marginBottom: 4 }}>When no map rows are given, children are auto-placed in a grid.</div>
 				<Ex code="*" desc="Single row, all children side by side" />
 				<Ex code="*4" desc="4 columns, rows auto-generated from child count" />
 				<Ex code="|*3" desc="Transposed: 3 rows, children flow as columns" />
 				<Ex code="*s3c6a3" desc="Span pattern: 12-col grid, children cycle 3/6/3 spans" />
 				<Ex code="*w2*2" desc="Pattern: w spans 2 + 2 singles = 4-col grid" />
 				<Ex code="h12 *s3c6a3" desc="Mixed: static header row + auto-flow body" />
-				<div style={{ color: "#555", marginTop: 4 }}>Auto-flow areas are named <C>c0</C>, <C>c1</C>, <C>c2</C>, ... for use with extensions.</div>
+				<div style={{ color: "#999", marginTop: 4 }}>Auto-flow areas are named <C>c0</C>, <C>c1</C>, <C>c2</C>, ... for use with extensions.</div>
 			</Section>
 			<Section title="Size Sections">
-				<div style={{ color: "#888", marginBottom: 4 }}>After the pipe(s): <code style={{ color: "#c3e88d" }}>| col-sizes | row-sizes</code></div>
+				<div style={{ color: "#999", marginBottom: 4 }}>After the pipe(s): <code style={{ color: "#c3e88d" }}>| col-sizes | row-sizes</code></div>
 				<Ex code="." desc="auto" />
 				<Ex code="#" desc="1fr" />
 				<Ex code="200" desc="200px" />
@@ -66,11 +66,11 @@ export default function Docs() {
 				<Ex code="*200~#" desc="Leading * = auto-fill: repeat(auto-fill, minmax(200px, 1fr))" />
 				<Ex code="*200~#*" desc="Both * = auto-fit: repeat(auto-fit, minmax(200px, 1fr))" />
 				<Ex code="*200 300" desc="Multi-size auto-fill: repeat(auto-fill, 200px 300px)" />
-				<div style={{ color: "#555", marginTop: 4 }}>Without trailing <C>*</C>, remaining tracks are filled with 1fr (auto-flow) or auto (map).</div>
-				<div style={{ color: "#555", marginTop: 2 }}>Leading <C>*</C> auto-fill/auto-fit implies full width (or height when transposed).</div>
+				<div style={{ color: "#999", marginTop: 4 }}>Without trailing <C>*</C>, remaining tracks are filled with 1fr (auto-flow) or auto (map).</div>
+				<div style={{ color: "#999", marginTop: 2 }}>Leading <C>*</C> auto-fill/auto-fit implies full width (or height when transposed).</div>
 			</Section>
 			<Section title="? Flags (container-level)">
-				<div style={{ color: "#888", marginBottom: 4 }}>Flags float freely in the layout string. Lowercase = justify, Uppercase = align.</div>
+				<div style={{ color: "#999", marginBottom: 4 }}>Flags float freely in the layout string. Lowercase = justify, Uppercase = align.</div>
 				<Ex code="?w" desc="Full width (width: 100%)" />
 				<Ex code="?h" desc="Full height (height: 100%)" />
 				<Ex code="?f" desc="Reverse auto-flow direction (row↔column) — auto-flow only" />
@@ -83,11 +83,11 @@ export default function Docs() {
 				<Ex code="?b / ?B" desc="space-between (Borders)" />
 				<Ex code="?a / ?A" desc="space-around" />
 				<Ex code="?g / ?G" desc="space-evenly (Gaps)" />
-				<div style={{ color: "#555", marginTop: 4 }}>Mnemonic: <C>SECBAG</C> — Start End Center Borders Around Gaps</div>
-				<div style={{ color: "#555", marginTop: 2 }}>Transpose swaps justify↔align axes automatically.</div>
+				<div style={{ color: "#999", marginTop: 4 }}>Mnemonic: <C>SECBAG</C> — Start End Center Borders Around Gaps</div>
+				<div style={{ color: "#999", marginTop: 2 }}>Transpose swaps justify↔align axes automatically.</div>
 			</Section>
 			<Section title="Per-Area Modifiers ()">
-				<div style={{ color: "#888", marginBottom: 4 }}>Attach modifiers to any area in the legend or as placement annotations. All types compose freely, separated by spaces or commas.</div>
+				<div style={{ color: "#999", marginBottom: 4 }}>Attach modifiers to any area in the legend or as placement annotations. All types compose freely, separated by spaces or commas.</div>
 				<Ex code="a(s/e/c/l)" desc="justify-self: start / end / center / baseline" />
 				<Ex code="a(S/E/C/L)" desc="align-self: start / end / center / baseline" />
 				<Ex code="a(cC)" desc="center both axes" />
@@ -99,24 +99,24 @@ export default function Docs() {
 				<Ex code="a(200!)" desc="flex-basis: 200px + flex-shrink: 0" />
 				<Ex code="a(200/2)" desc="flex-basis: 200px + flex-shrink: 2" />
 				<Ex code="a(eC z3 .card)" desc="combined: end justify, center align, z-index 3, class 'card'" />
-				<div style={{ color: "#555", marginTop: 4 }}>Works in legend: <C>a(z5)B(sE)</C>, on placements: <C>a(cC)[1:3,1:3]</C>, and as floating meta entries.</div>
-				<div style={{ color: "#555", marginTop: 2 }}>Transpose swaps justify-self?align-self.</div>
+				<div style={{ color: "#999", marginTop: 4 }}>Works in legend: <C>a(z5)B(sE)</C>, on placements: <C>a(cC)[1:3,1:3]</C>, and as floating meta entries.</div>
+				<div style={{ color: "#999", marginTop: 2 }}>Transpose swaps justify-self?align-self.</div>
 			</Section>
 			<Section title="Floating Meta Entries">
-				<div style={{ color: "#888", marginBottom: 4 }}>
-					<code style={{ color: "#c3e88d" }}>letter(mods)</code> can appear anywhere in the layout string — after map rows or inside pipe sizes — as freestanding annotations. Multiple entries merge: classNames accumulate, other keys take the later value.
+				<div style={{ color: "#999", marginBottom: 4 }}>
+					<C>letter(mods)</C> can appear anywhere in the layout string — after map rows or inside pipe sizes — as freestanding annotations. Multiple entries merge: classNames accumulate, other keys take the later value.
 				</div>
 				<Ex code="ab 8 a(z3 .hero)" desc="z-index + class on a, after map rows" />
 				<Ex code="ab | 200# a(z3)" desc="meta in sizes segment — col sizes unaffected" />
 				<Ex code="ab a(.foo) a(.bar)" desc="two entries — className accumulates to 'foo bar'" />
 			</Section>
 			<Section title="Proportional Columns">
-				<div style={{ color: "#888", marginBottom: 4 }}>Repeating area chars in map rows → columns default to 1fr (proportional)</div>
+				<div style={{ color: "#999", marginBottom: 4 }}>Repeating area chars in map rows → columns default to 1fr (proportional)</div>
 				<Ex code="ab abb" desc="a=1fr b=2fr (b appears twice)" />
 				<Ex code="ab aab" desc="a=2fr b=1fr" />
 			</Section>
 			<Section title="Placement Overrides">
-				<div style={{ color: "#888", marginBottom: 4 }}>Line-based positioning — bypasses grid-template-areas, uses grid-column/row directly.</div>
+				<div style={{ color: "#999", marginBottom: 4 }}>Line-based positioning — bypasses grid-template-areas, uses grid-column/row directly.</div>
 				<Ex code="i[1:3,1:3]" desc="i spans cols 1–3, rows 1–3" />
 				<Ex code="I[1:3,1:3]" desc="Uppercase = grow area (tracks ? 1fr)" />
 				<Ex code="i[1:3,1:3,10]" desc="Third value = z-index" />
@@ -126,22 +126,22 @@ export default function Docs() {
 				<Ex code="i[1:3,1:3] q[2:4,2:4]" desc="Pure placement: no map, grid size inferred from lines" />
 			</Section>
 			<Section title="Overlap & Layers">
-				<div style={{ color: "#888", marginBottom: 4 }}>Two ways to overlap areas — both resolve to placement overrides.</div>
+				<div style={{ color: "#999", marginBottom: 4 }}>Two ways to overlap areas — both resolve to placement overrides.</div>
 				<Ex code="[iq]" desc="Bracket cell: i and q share this cell in the map" />
 				<Ex code="ii. i[iq]q .qq" desc="Direct overlap markup in map rows" />
 				<Ex code="ii. + .qq" desc="Layer separator: overlay two maps, merge overlapping cells" />
 				<Ex code="iq ii. ii. + ... .qq .qq" desc="Layers: i and q overlap in center ? placement overrides" />
-				<div style={{ color: "#555", marginTop: 4 }}>Overlap areas are extracted from the map and positioned via grid-column/row.</div>
-				<div style={{ color: "#555", marginTop: 2 }}>Non-overlapping layers merge normally without bracket cells.</div>
+				<div style={{ color: "#999", marginTop: 4 }}>Overlap areas are extracted from the map and positioned via grid-column/row.</div>
+				<div style={{ color: "#999", marginTop: 2 }}>Non-overlapping layers merge normally without bracket cells.</div>
 			</Section>
 			<Section title="Flex Mode">
-				<div style={{ color: "#888", marginBottom: 4 }}>Same DSL, <code style={{ color: "#c3e88d" }}>display: flex</code> output. Use <C>&lt;Flex&gt;</C> or add <C>?x</C> / <C>?W</C> to any layout string.</div>
+				<div style={{ color: "#999", marginBottom: 4 }}>Same DSL, <code style={{ color: "#c3e88d" }}>display: flex</code> output. Use <C>&lt;Flex&gt;</C> or add <C>?x</C> / <C>?W</C> to any layout string.</div>
 				<Ex code="<Flex layout='abc 8'>" desc="Flex row — h-stack with gap" />
 				<Ex code="<Flex layout='|abc 8'>" desc="Flex column — v-stack with gap" />
 				<Ex code="abc 8 ?x" desc="Same as <Flex> — explicit flex flag on <Grid>" />
 				<Ex code="* 8 ?w ?W | *140~200" desc="Wrap — last row auto-centers (impossible with grid)" />
 				<Ex code="<Layout d='abc ?x'>" desc="<Layout> with d prop — mode auto-detected from flags" />
-				<div style={{ color: "#555", marginTop: 6, marginBottom: 2 }}>In flex mode:</div>
+				<div style={{ color: "#999", marginTop: 6, marginBottom: 2 }}>In flex mode:</div>
 				<Ex code="A (uppercase)" desc="flex-grow: 1 — same semantics as grid grow areas" />
 				<Ex code="| prefix" desc="flex-direction: column" />
 				<Ex code="?f" desc="row-reverse / column-reverse when combined with |" />
@@ -149,7 +149,7 @@ export default function Docs() {
 				<Ex code="| 1fr 2fr" desc="flex-grow: 1, flex-grow: 2" />
 				<Ex code="| 120~# 80~200" desc="basis 120 + grow freely / basis 80 + max-width 200" />
 				<Ex code="a(200!)" desc="flex-basis 200px, flex-shrink: 0 — via () modifier" />
-				<div style={{ color: "#555", marginTop: 4 }}>Transposed layouts use <C>max-height</C> instead of <C>max-width</C> for minmax caps.</div>
+				<div style={{ color: "#999", marginTop: 4 }}>Transposed layouts use <C>max-height</C> instead of <C>max-width</C> for minmax caps.</div>
 			</Section>
 			<Section title="Grid Component Props">
 				<Ex code="layout" desc="Layout string" />
@@ -163,7 +163,7 @@ export default function Docs() {
 				<Ex code="breaks" desc="Custom thresholds — default { xs:0, sm:576, md:768, lg:992, xl:1200 }" />
 			</Section>
 			<Section title="Extensions">
-				<div style={{ color: "#888", marginBottom: 6 }}>Behavioral extensions — composable, stackable on any Grid.</div>
+				<div style={{ color: "#999", marginBottom: 6 }}>Behavioral extensions — composable, stackable on any Grid.</div>
 				<Ex code="debug({ color? })" desc="Show grid cell overlay" />
 				<Ex code='scrollable({ area, axis? })' desc='Make area scrollable — axis: "both" | "x" | "y". Area can be string or array.' />
 				<Ex code='overlay({ area, over })' desc="Place area over another — same grid cells, higher z-index" />
@@ -176,7 +176,7 @@ export default function Docs() {
 				<Ex code='fisheye({ axis?, intensity?, min?, sticky? })' desc='Tracks expand near cursor — axis: "x"|"y"|"both". sticky: keep effect after cursor leaves. Auto-swaps on transpose.' />
 				<Ex code='masonry({ balanced? })' desc='Masonry layout — close gaps via translateY (or translateX when transposed). Items use --width/--height CSS vars for aspect-ratio sizing, or get measured from DOM. balanced: reorder items per row to minimize height.' />
 				<Ex code='render({ container?, cell? })' desc="Custom DOM output — replace container tag and/or cell wrapper elements" />
-				<div style={{ color: "#555", marginTop: 8, fontSize: 11 }}>Extension interface: {"{ name, render?, renderContainer?, wrapCell?, containerStyle?, areaStyle?, transformVars?, transformAreas?, needsAreas?, needsWrapper? }"}</div>
+				<div style={{ color: "#999", marginTop: 8, fontSize: 11 }}>Extension interface: {"{ name, render?, renderContainer?, wrapCell?, containerStyle?, areaStyle?, transformVars?, transformAreas?, needsAreas?, needsWrapper? }"}</div>
 			</Section>
 			<Section title="Quick Examples">
 				<Ex code="ab" desc="Two equal columns" />
