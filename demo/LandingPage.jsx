@@ -320,13 +320,13 @@ let LandingPage = ({ onNavigate }) => {
 							<Logo size={56} color="#fff"/>
 						</div>
 						<h1 className="gp-h2">gridpack</h1>
-						<div className="gp-tag">CSS Grid Layout DSL</div>
+						<div className="gp-tag">CSS Grid/Flex Layout DSL</div>
 					</Grid>
 					<h1 className="gp-h1">
 						Layouts in<br /><em>one string.</em>
 					</h1>
 					<p className="gp-sub">
-						Gridpack compiles a compact layout string into CSS Grid.
+						Gridpack compiles a compact layout string into CSS Grid (or Flex).<br/>
 						A React component, optional extensions, and zero wrapper divs.
 						From <span className="gp-mono" style={{ color: "#c3e88d" }}>ab</span> to full dashboards — one prop.
 					</p>

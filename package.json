@@ -1,8 +1,8 @@
 {
 	"name": "gridpack",
-	"version": "0.3.1",
+	"version": "0.3.2",
 	"type": "module",
-	"description": "CSS Grid layouts in one string.",
+	"description": "CSS layouts in one string.",
 	"author": "theKey",
 	"license": "MIT",
 	"keywords": [

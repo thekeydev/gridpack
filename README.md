@@ -1,7 +1,7 @@
 <h1 align="center">gridpack</h1>
 
 <p align="center">
-  <strong>CSS Grid layouts in one string. <a href="https://thekeydev.github.io/gridpack/demo/">See demo.</a></strong>
+  <strong>CSS layouts in one string. <a href="https://thekeydev.github.io/gridpack/demo/">See demo / docs.</a></strong>
 </p>
 
 <p align="center">
@@ -24,6 +24,8 @@ A compact DSL that compiles layout strings into CSS Grid. One React component, o
 ```
 
 That's a full page layout. No CSS files, no class names, no nesting.
+
+> **New to gridpack?** The [interactive guide](https://thekeydev.github.io/gridpack/demo/#docs) walks through every concept with live, editable examples — the gentlest way in. This README is the condensed tour.
 
 ## Install
 
@@ -295,7 +297,7 @@ let [v, setV] = useState({ w: 200 });
   vars={v}
   onVarsChange={setV}
   extensions={[
-    splitPane({ var: "w", edge: "s:e", min: 80, max: 400 }),
+    splitPane({ var: "w", edge: "s:r", min: 80, max: 400 }),
     scrollable({ area: ["s", "c"] }),
     debug(),
   ]}
@@ -415,7 +417,7 @@ Implicit rules:
 <td>
 
 ```jsx
-<Grid layout="hscf hhh scc sff 8 | 200##">
+<Grid layout="hsCf hhh scc sff 8 | 200##">
   <Header />
   <Sidebar />
   <Content />
@@ -429,8 +431,9 @@ Implicit rules:
 
 ## Links
 
-- [Playground](https://thekeydev.github.io/gridpack/demo/) — interactive demo with 40+ presets, guided tutorials, and live source view
-- [Documentation](https://thekeydev.github.io/gridpack/demo/) — full reference
+- [Playground](https://thekeydev.github.io/gridpack/demo/#playground) — interactive demo with 40+ presets, guided tutorials, and live source view
+- [Guide](https://thekeydev.github.io/gridpack/demo/#docs) — a progressive, example-driven walkthrough with live, editable previews for every concept
+- [Reference](https://thekeydev.github.io/gridpack/demo/#reference) — terse lookup card for the full token and grammar surface
 - [npm](https://www.npmjs.com/package/gridpack)
 
 ## Support

@@ -1,8 +1,30 @@
 # Changelog
 
+## 0.3.2
+ 
+A documentation and tooling release. No new layout-string syntax — the DSL surface is unchanged — but the way the library is learned, demoed, and shared is overhauled.
+ 
+### New Guide
+ 
+- **`guide.md` + Markdown-rendered Docs** — the dense `Docs.jsx` reference card is replaced by a progressive, task-oriented guide written in Markdown. Each section opens with a goal, shows a working layout, then explains the syntax. Sections are ordered for learning flow: Stacking → Area Maps → Sizing → Growing → Alignment → Responsive → Dynamic Rows → Auto-Flow → Sizing Deep Dive → Overlap → Template Variables → Extensions → Per-Area Modifiers → Flex Mode → Sub-Layouts (preview) → reference tables + grammar.
+  - **Guide content is still work-in-progress**
+- **Live examples in the guide** — fenced ` ```example ` blocks contain a URL-DSL string and render as interactive `<Grid>` previews inline, using the same generators and extension builders as the playground. Each carries an "open in playground" action.
+- **Minimal Markdown renderer** — a small hand-rolled parser (headings, lists, tables with escaped pipes, blockquotes, inline code/bold/links, fenced code) embedded via the esbuild `text` loader (`import guideMd from "./guide.md"`). No Markdown dependency.
+- **Scroll-spy TOC** — the sidebar highlights the section currently on screen (reading progress) and expands it to reveal its sub-headings; an active sub-heading keeps its parent open. The active entry auto-scrolls into view within the sidebar.
+- **Reference.jsx** — the previous terse `Docs.jsx` reference card is preserved as a separate "Reference" tab for lookup.
+
+### Human-Readable URLs + SPA Router
+ 
+- **Hash router** — `GridDemo` now syncs the active tab (and playground/guide state) to the URL hash, so browser back/forward works and views are deep-linkable and shareable. Tabs stay mounted, preserving state and scroll.
+- **Per-section deep links** — in-guide cross-references and any unrecognized hash (e.g. `#flex-mode`) route to the guide and scroll to that section. Back/forward jumps between sections.
+- **Scroll restoration** — the guide saves and restores per-entry scroll position, so leaving for the playground and pressing back returns you to the exact spot.
+- **Readable URL DSL** — playground/example state serializes to a legible `;`-delimited string (`hsCf hhh scc sff 8;bx(4,Header,Sidebar,Content,Footer)`) instead of base64. Only `%`, space (`+`), and `#` are escaped; commas, colons, pipes, and brackets stay raw.
+- **Distinguishable history titles** — `document.title` reflects the current tab/section (e.g. `gridpack — Guide: Flex Mode`).
+
 ## 0.3.1
 
 - Bug fixes.
+- Test suite expanded from 377 to 386 tests.
 
 ## 0.3.0
 

@@ -7,7 +7,7 @@ let shared = {
 	bundle: true,
 	external: ["react", "react-dom"],
 	jsx: "automatic",
-	loader: { ".js": "jsx", ".jsx": "jsx" },
+	loader: { ".js": "jsx", ".jsx": "jsx", ".md": "text" },
 	minify: true,
 	sourcemap: true,
 };

@@ -1,6 +1,7 @@
 import React from "react";
 import { Grid, Flex, Layout, debug, splitPane, scrollable, animate, } from "../src/Grid.jsx";
 import { parseGridLayout, toGridStyle } from "../src/grid-layout-dsl.js";
+import GenericPlayground from "./Playground";
 
 let Style = ({ children }) => <style>{children}</style>
 Style.__notAComponent = true;
@@ -411,19 +412,104 @@ let useIsMobile = () => {
 
 import LandingPage from "./LandingPage";
 import Reference from "./Reference";
+import Docs from "./Docs";
 import OgImage from "./OgImage";
 
 export default function App() {
-	let [tab,setTab] = React.useState("landing");
-	let [mounted,setMounted] = React.useState({ landing: true });
-	let tabList = [["Welcome","landing"], ["Playground","playground"], ["Reference","reference"]];
-	if (document.location.hash=="#og:image" && tab!="ogimage")
-		setTab("ogimage");
+	let tabList = [["Welcome","landing"], ["Examples","examples"], ["Playground","playground"], ["Guide","docs"], ["Reference","reference"]];
+	let tabIds = tabList.map(t => t[1]);
 
-	// track which tabs have been visited so they stay mounted
+	// "area-maps" -> "Area Maps" for history/tab titles
+	let deslug = (s) => s.split("-").map(w => w ? w[0].toUpperCase() + w.slice(1) : w).join(" ");
+
+	// --- hash router ---
+	// hash format: "#<tab>" or "#<tab>?<query>" (e.g. "#playground?gp=sC+|+{w}%23;...").
+	// an unrecognized hash is treated as a Docs section slug (e.g. "#flex-mode"),
+	// so in-guide cross-references and shared deep links land in the guide.
+	let parseHash = () => {
+		let h = window.location.hash.replace(/^#/, "");
+		if (h === "og:image") return { tab: "ogimage", query: "", docSection: null };
+		let qi = h.indexOf("?");
+		let tab = qi >= 0 ? h.slice(0, qi) : h;
+		let query = qi >= 0 ? h.slice(qi + 1) : "";
+		if (tab === "") return { tab: "landing", query: "", docSection: null };
+		if (!tabIds.includes(tab)) return { tab: "docs", query: "", docSection: tab };
+		return { tab, query, docSection: null };
+	};
+
+	let [route, setRoute] = React.useState(parseHash);
+	let [mounted, setMounted] = React.useState(() => ({ [route.tab]: true }));
+	let [pgState, setPgState] = React.useState(() =>
+		route.tab === "playground" && route.query ? route.query : null);
+	// bumped on every route change so downstream scroll effects re-fire even when
+	// the target is unchanged (e.g. landing on the same section twice)
+	let [navSeq, setNavSeq] = React.useState(0);
+
+	// each history entry gets a unique key (in history.state) so views can save
+	// and restore per-entry scroll positions on back/forward
+	let keyCounter = React.useRef(0);
+	let ensureKey = () => {
+		if (window.history.state?.k == null)
+			window.history.replaceState({ k: ++keyCounter.current }, "");
+		else
+			keyCounter.current = Math.max(keyCounter.current, window.history.state.k);
+		return window.history.state.k;
+	};
+
+	let tab = route.tab;
+
+	// navType: "push" for a fresh click navigation, "pop" for browser back/forward.
+	// views use it to decide between going to a target vs. restoring saved scroll.
+	let applyRoute = (r, navType, histKey) => {
+		setRoute({ ...r, navType, histKey });
+		setNavSeq(n => n + 1);
+		if (r.tab === "playground" && r.query) setPgState(r.query);
+	};
+
+	// navigate: update state + push hash (so back/forward works). query is raw
+	// (already fragment-encoded by the caller, e.g. "gp=...").
+	let navigate = (nextTab, query = "") => {
+		let hash = "#" + nextTab + (query ? "?" + query : "");
+		window.history.pushState({ k: ++keyCounter.current }, "", hash);
+		applyRoute({ tab: nextTab, query, docSection: null }, "push", keyCounter.current);
+	};
+
+	// navigateDoc: jump to a guide section. pushes "#<slug>" as a real history
+	// entry so the back button returns to where the reader came from.
+	let navigateDoc = (slug) => {
+		window.history.pushState({ k: ++keyCounter.current }, "", "#" + slug);
+		applyRoute({ tab: "docs", query: "", docSection: slug }, "push", keyCounter.current);
+	};
+
+	// respond to browser back/forward. only popstate — we drive all programmatic
+	// changes through applyRoute, so listening to hashchange too would double-fire.
+	React.useEffect(() => {
+		let onPop = () => applyRoute(parseHash(), "pop", ensureKey());
+		window.addEventListener("popstate", onPop);
+		return () => window.removeEventListener("popstate", onPop);
+	}, []);
+
+	// keep visited tabs mounted (preserves scroll + state when switching away)
 	React.useEffect(() => {
 		if (!mounted[tab]) setMounted(m => ({ ...m, [tab]: true }));
 	}, [tab]);
+
+	// on first load, stamp the initial history entry with a key and reflect the tab
+	React.useEffect(() => {
+		let k = ensureKey();
+		if (!window.location.hash && tab !== "landing")
+			window.history.replaceState({ k }, "", "#" + tab);
+		setRoute(r => ({ ...r, histKey: k, navType: "push" }));
+	}, []);
+
+	// browser-history / tab title — makes entries distinguishable in the back menu
+	React.useEffect(() => {
+		let label;
+		if (route.docSection) label = "Guide: " + deslug(route.docSection);
+		else label = ({ landing: "Welcome", examples: "Examples", playground: "Playground",
+			docs: "Guide", reference: "Reference", ogimage: "OG Image" })[route.tab] || "gridpack";
+		document.title = "gridpack — " + label;
+	}, [route.tab, route.docSection]);
 
 	let show = (id) => ({ display: tab == id ? "block" : "none", height: "100%", overflow: "hidden" });
 
@@ -463,12 +549,14 @@ export default function App() {
 			/></svg>
 			<span style={{ fontSize: 18, fontWeight: 700, color: "#7fdbca", marginRight: 8 }}>gridpack</span>
 			{tabList.map(([name,tabId]) =>
-				<button key={name} onClick={() => setTab(tabId)} style={{ background: "none", border: "none", color: tab==tabId ? "#8dc" : "#8aa", fontFamily: "inherit", fontSize: 14, cursor: "pointer", borderBottom: tab==tabId ? "2px solid #7fdbca" : "2px solid transparent", padding: "4px 8px" }}>{name}</button>
+				<button key={name} onClick={() => navigate(tabId)} style={{ background: "none", border: "none", color: tab==tabId ? "#8dc" : "#8aa", fontFamily: "inherit", fontSize: 14, cursor: "pointer", borderBottom: tab==tabId ? "2px solid #7fdbca" : "2px solid transparent", padding: "4px 8px" }}>{name}</button>
 			)}
 		</div>
 		<div style={{ overflow: "hidden", height: "100%", minWidth: 0 }}>
-			<div style={show("landing")}>{mounted.landing && <LandingPage onNavigate={setTab} />}</div>
-			<div style={show("playground")}>{mounted.playground && <MobilePlayground />}</div>
+			<div style={show("landing")}>{mounted.landing && <LandingPage onNavigate={navigate} />}</div>
+			<div style={show("examples")}>{mounted.examples && <MobilePlayground />}</div>
+			<div style={show("playground")}>{mounted.playground && <GenericPlayground urlState={pgState} />}</div>
+			<div style={show("docs")}>{mounted.docs && <Docs onOpenPlayground={(q) => navigate("playground", q)} onNavigateSection={navigateDoc} scrollTo={route.docSection} navSeq={navSeq} histKey={route.histKey} navType={route.navType} />}</div>
 			<div style={show("reference")}>{mounted.reference && <Reference />}</div>
 			{tab == "ogimage" && <OgImage />}
 		</div>
