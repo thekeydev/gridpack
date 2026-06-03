@@ -536,7 +536,7 @@ let GenericPlayground = ({ urlState = null } = {}) => {
 	return <div className="gp-root">
 		<style>{GP_CSS}</style>
 		<Grid
-			layout="RpBnl nn rp bb ll ?wh | #{w} | . {h}~# . 0~#"
+			layout="RpBnl nn rp bb ll ?wh | #{w} | . {h}"
 			md="RpBnl lnn lrp lbb ?wh | {nw}#{w} | . {h} #"
 			vars={v}
 			onVarsChange={setV}
