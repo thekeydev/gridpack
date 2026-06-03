@@ -456,6 +456,10 @@ let GenericPlayground = ({ urlState = null } = {}) => {
 	let [bps, setBps] = React.useState(init.breakpoints || DEFAULT.breakpoints);
 	let [showOverlay, setShowOverlay] = React.useState(init.showOverlay ?? true);
 	let [copied, setCopied] = React.useState(false);
+	// debug panel is collapsible; default collapsed on small screens where vertical
+	// space is scarce, expanded on desktop (matches the app's 640px mobile boundary)
+	let [debugOpen, setDebugOpen] = React.useState(
+		typeof window === "undefined" || window.innerWidth >= 640);
 
 	// when the router pushes a new gp (e.g. clicking another docs example while
 	// the playground is already mounted), apply it. ignore the very first run.
@@ -532,8 +536,8 @@ let GenericPlayground = ({ urlState = null } = {}) => {
 	return <div className="gp-root">
 		<style>{GP_CSS}</style>
 		<Grid
-			layout="RpBnl nn rp bb ll ?wh | #{w} | .{h}. 0~#"
-			md="RpBnl lnn lrp lbb ?wh | {nw}#{w} | .{h}#"
+			layout="RpBnl nn rp bb ll ?wh | #{w} | . {h}~# . 0~#"
+			md="RpBnl lnn lrp lbb ?wh | {nw}#{w} | . {h} #"
 			vars={v}
 			onVarsChange={setV}
 			extensions={[
@@ -555,10 +559,13 @@ let GenericPlayground = ({ urlState = null } = {}) => {
 			{/* child 2: area p — empty right panel ({w} wide, collapsed by default) */}
 			<div />
 
-			{/* child 3: area B/b — debug (full width at bottom) */}
+			{/* child 3: area B/b — debug (full width at bottom), collapsible */}
 			<div>
-				<div className="gp-section-hd gp-sticky-hd">Debug</div>
-				<DebugPanel parsed={parsed} layout={layout} vars={vars} />
+				<div className="gp-section-hd gp-sticky-hd gp-collapsible-hd" onClick={() => setDebugOpen(o => !o)}>
+					<span className="gp-ext-arrow">{debugOpen ? "▾" : "▸"}</span>
+					<span>Debug</span>
+				</div>
+				{debugOpen && <DebugPanel parsed={parsed} layout={layout} vars={vars} />}
 			</div>
 
 			{/* child 4: area n — empty top strip */}
@@ -707,12 +714,12 @@ let GP_CSS = `
 .gp-section-hd {
 	display: flex;
 	align-items: center;
-	justify-content: space-between;
 	font-size: 10px;
 	text-transform: uppercase;
 	letter-spacing: 1px;
 	color: #fff;
 	padding: 6px 10px 4px;
+	gap: 4px;
 }
 .gp-collapsible-hd { cursor: pointer; user-select: none; }
 .gp-collapsible-hd:hover { color: #7fdbca; }
@@ -836,7 +843,7 @@ let GP_CSS = `
 	user-select: none;
 }
 .gp-ext-hd:hover { background: #ffffff06; }
-.gp-ext-arrow { font-size: 9px; color: #999; width: 10px; flex-shrink: 0; }
+.gp-ext-arrow { font-size: 16px; color: #999; width: 10px; flex-shrink: 0; }
 .gp-ext-name { font-size: 11px; color: #c792ea; flex: 1; }
 
 /* --- debug panel (area p) --- */

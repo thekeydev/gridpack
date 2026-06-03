@@ -444,6 +444,9 @@ export default function App() {
 	// bumped on every route change so downstream scroll effects re-fire even when
 	// the target is unchanged (e.g. landing on the same section twice)
 	let [navSeq, setNavSeq] = React.useState(0);
+	// mobile nav drawer + guide TOC reported up from Docs (so the drawer can host it)
+	let [drawerOpen, setDrawerOpen] = React.useState(false);
+	let [tocState, setTocState] = React.useState({ toc: [], activeSlug: null, activeParent: null });
 
 	// each history entry gets a unique key (in history.state) so views can save
 	// and restore per-entry scroll positions on back/forward
@@ -463,6 +466,7 @@ export default function App() {
 	let applyRoute = (r, navType, histKey) => {
 		setRoute({ ...r, navType, histKey });
 		setNavSeq(n => n + 1);
+		setDrawerOpen(false);
 		if (r.tab === "playground" && r.query) setPgState(r.query);
 	};
 
@@ -513,7 +517,8 @@ export default function App() {
 
 	let show = (id) => ({ display: tab == id ? "block" : "none", height: "100%", overflow: "hidden" });
 
-	return <Grid layout="|?wh|.#" style={{height:"100%",position:"fixed"}} className="app">
+	return <>
+	<Grid layout="|?wh|.#" style={{height:"100%",position:"fixed"}} className="app">
 		<Style>{`
 			/*
 			@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&family=DM+Sans:wght@400;500;700&display=swap');
@@ -542,23 +547,86 @@ export default function App() {
 			.c5 { background: #3a5f1e; color: #dcedc8; border: 1px solid rgba(255,255,255,0.25); }
 			.c6 { background: #1e5f5f; color: #9edcd6; border: 1px solid rgba(255,255,255,0.25); }
 			.c7 { background: #5f5f1e; color: #ffeb3b; border: 1px solid rgba(255,255,255,0.25); }
+
+			/* --- top nav + mobile drawer --- */
+			.hamburger { display: none; background: none; border: none; cursor: pointer; padding: 4px;
+				margin-right: 2px; align-items: center; }
+			.topnav { display: flex; align-items: center; gap: 4px; }
+			.drawer-scrim { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 90; }
+			.drawer { position: fixed; top: 0; left: 0; bottom: 0; width: 260px; max-width: 80vw;
+				background: #16213e; border-right: 1px solid #2a2a4a; z-index: 100; overflow-y: auto;
+				padding: 16px 10px; transform: translateX(-100%); transition: transform 0.22s ease;
+				display: none; }
+			.drawer.open { transform: translateX(0); }
+			.drawer-nav { display: flex; flex-direction: column; gap: 2px; }
+			.drawer-link { display: block; width: 100%; text-align: left; background: none; border: none;
+				font-family: inherit; font-size: 15px; color: #9aa; cursor: pointer; padding: 9px 12px;
+				border-radius: 6px; border-left: 2px solid transparent; line-height: 1.3; }
+			.drawer-link:hover { background: #1a2540; color: #7fdbca; }
+			.drawer-link.act { color: #7fdbca; background: #7fdbca12; border-left-color: #7fdbca; font-weight: 600; }
+			.drawer-link.sm { font-size: 13px; padding: 6px 12px; }
+			.drawer-link.sub { font-size: 12px; padding: 4px 12px 4px 24px; color: #777790; }
+			.drawer-link.sub.act { color: #7fdbca; background: #7fdbca10; }
+			.drawer-divider { height: 1px; background: #2a2a4a; margin: 12px 6px; }
+			.drawer-tochd { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em;
+				color: #686880; font-weight: 700; padding: 0 12px; margin-bottom: 6px; }
+			.drawer-toc { display: flex; flex-direction: column; gap: 1px; }
+
+			@media (max-width: 640px) {
+				.topnav { display: none; }
+				.hamburger { display: flex; }
+				.drawer { display: block; }
+			}
 		`}</Style>
-		<div style={{ padding: "12px", background: "#16213e", borderBottom: "1px solid #2a2a4a", display: "flex", alignItems: "center", gap: 8 }}>
+		<div className="topbar" style={{ padding: "12px", background: "#16213e", borderBottom: "1px solid #2a2a4a", display: "flex", alignItems: "center", gap: 8 }}>
+			<button className="hamburger" aria-label="Menu" onClick={() => setDrawerOpen(o => !o)}>
+				<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#7fdbca" strokeWidth="2" strokeLinecap="round">
+					<path d="M3 6h18M3 12h18M3 18h18" />
+				</svg>
+			</button>
 			<svg width="28" height="28" viewBox="0 0 56 56"><path fill="#7fdbca" d=
 				"m41.266 19.117l8.812-5.015c-.352-.352-.774-.633-1.289-.915l-16.523-9.42C30.813 2.946 29.406 2.5 28 2.5s-2.812.445-4.266 1.266L18.977 6.46ZM28 26.641l10.008-5.672l-22.195-12.68l-8.602 4.899c-.516.28-.937.562-1.29.914ZM29.594 53.5c.164-.047.304-.117.469-.21l18.351-10.454c2.18-1.242 3.375-2.508 3.375-5.906V18.672c0-.703-.07-1.266-.187-1.781L29.594 29.453Zm-3.188 0V29.453L4.4 16.891a7.8 7.8 0 0 0-.188 1.78V36.93c0 3.398 1.195 4.664 3.375 5.906l18.352 10.453c.164.094.304.164.468.211"
 			/></svg>
 			<span style={{ fontSize: 18, fontWeight: 700, color: "#7fdbca", marginRight: 8 }}>gridpack</span>
-			{tabList.map(([name,tabId]) =>
-				<button key={name} onClick={() => navigate(tabId)} style={{ background: "none", border: "none", color: tab==tabId ? "#8dc" : "#8aa", fontFamily: "inherit", fontSize: 14, cursor: "pointer", borderBottom: tab==tabId ? "2px solid #7fdbca" : "2px solid transparent", padding: "4px 8px" }}>{name}</button>
-			)}
+			<div className="topnav">
+				{tabList.map(([name,tabId]) =>
+					<button key={name} onClick={() => navigate(tabId)} style={{ background: "none", border: "none", color: tab==tabId ? "#8dc" : "#8aa", fontFamily: "inherit", fontSize: 14, cursor: "pointer", borderBottom: tab==tabId ? "2px solid #7fdbca" : "2px solid transparent", padding: "4px 8px" }}>{name}</button>
+				)}
+			</div>
 		</div>
 		<div style={{ overflow: "hidden", height: "100%", minWidth: 0 }}>
 			<div style={show("landing")}>{mounted.landing && <LandingPage onNavigate={navigate} />}</div>
 			<div style={show("examples")}>{mounted.examples && <MobilePlayground />}</div>
 			<div style={show("playground")}>{mounted.playground && <GenericPlayground urlState={pgState} />}</div>
-			<div style={show("docs")}>{mounted.docs && <Docs onOpenPlayground={(q) => navigate("playground", q)} onNavigateSection={navigateDoc} scrollTo={route.docSection} navSeq={navSeq} histKey={route.histKey} navType={route.navType} />}</div>
+			<div style={show("docs")}>{mounted.docs && <Docs onOpenPlayground={(q) => navigate("playground", q)} onNavigateSection={navigateDoc} onToc={setTocState} scrollTo={route.docSection} navSeq={navSeq} histKey={route.histKey} navType={route.navType} />}</div>
 			<div style={show("reference")}>{mounted.reference && <Reference />}</div>
 			{tab == "ogimage" && <OgImage />}
 		</div>
 	</Grid>
+	{drawerOpen && <div className="drawer-scrim" onClick={() => setDrawerOpen(false)} />}
+	<aside className={`drawer ${drawerOpen ? "open" : ""}`}>
+		<div className="drawer-nav">
+			{tabList.map(([name,tabId]) =>
+				<button key={name} className={`drawer-link ${tab==tabId ? "act" : ""}`}
+					onClick={() => navigate(tabId)}>{name}</button>
+			)}
+		</div>
+		{tab === "docs" && tocState.toc.length > 0 && <>
+			<div className="drawer-divider" />
+			<div className="drawer-tochd">On this page</div>
+			<div className="drawer-toc">
+				{tocState.toc.map(sec => {
+					let open = sec.slug === tocState.activeParent;
+					return <div key={sec.slug}>
+						<button className={`drawer-link sm ${tocState.activeSlug === sec.slug ? "act" : ""}`}
+							onClick={() => navigateDoc(sec.slug)}>{sec.text}</button>
+						{open && sec.children.length > 0 && sec.children.map(c =>
+							<button key={c.slug} className={`drawer-link sub ${tocState.activeSlug === c.slug ? "act" : ""}`}
+								onClick={() => navigateDoc(c.slug)}>{c.text}</button>)}
+					</div>;
+				})}
+			</div>
+		</>}
+	</aside>
+	</>
 }

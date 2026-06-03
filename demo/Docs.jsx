@@ -346,7 +346,7 @@ let buildHeadingList = (blocks) =>
 
 // --- main component ---
 
-export default function Docs({ source = guideMd, onOpenPlayground, onNavigateSection,
+export default function Docs({ source = guideMd, onOpenPlayground, onNavigateSection, onToc,
 	scrollTo = null, navSeq = 0, histKey = null, navType = "push" }) {
 	let blocks = React.useMemo(() => parseBlocks(source), [source]);
 	let toc = React.useMemo(() => buildToc(blocks), [blocks]);
@@ -458,6 +458,12 @@ export default function Docs({ source = guideMd, onOpenPlayground, onNavigateSec
 		return parentOf[activeSlug] || null;
 	}, [toc, activeSlug]);
 
+	// expose TOC + reading progress to the host (GridDemo) so its mobile drawer
+	// can render the same table of contents
+	React.useEffect(() => {
+		onToc?.({ toc, activeSlug, activeParent });
+	}, [toc, activeSlug, activeParent]);
+
 	// keep the highlighted TOC entry visible within the (independently scrolling)
 	// sidebar — "nearest" only scrolls when it's actually out of view
 	let navRef = React.useRef(null);
@@ -469,7 +475,8 @@ export default function Docs({ source = guideMd, onOpenPlayground, onNavigateSec
 
 	return <div className="dx-root">
 		<style>{DX_CSS}</style>
-		<Grid layout="tc ?wh | 180 #" lg="tc ?wh | 260 #" className="dx-grid">
+		<Grid layout="tc ?wh | 0 #" sm="tc ?wh | 180 #" lg="tc ?wh | 240 #"
+			breaks={{ sm: 641, lg: 992 }} className="dx-grid">
 			<nav className="dx-toc" ref={navRef}>
 				<div className="dx-toc-hd">Guide</div>
 				{toc.map(sec => {
@@ -502,6 +509,7 @@ let DX_CSS = `
 .dx-grid { width: 100%; height: 100%; }
 .dx-toc { height: 100%; overflow: auto; border-right: 1px solid #2a2a3a; padding: 16px 12px;
 	position: sticky; top: 0; font-size: 12px; }
+@media (max-width: 640px) { .dx-toc { display: none; } }
 .dx-toc-hd { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #686880;
 	margin-bottom: 10px; font-weight: 700; }
 .dx-toc-sec { margin-bottom: 1px; }
@@ -518,6 +526,7 @@ let DX_CSS = `
 	border-radius: 0 4px 4px 0; }
 .dx-toc-sublink.act { color: #7fdbca; background: #7fdbca10; font-weight: 500; box-shadow: inset 2px 0 0 #7fdbca; }
 .dx-article { height: 100%; padding: 24px 32px 80px; max-width: 820px; line-height: 1.7; }
+@media (max-width: 640px) { .dx-article { padding: 16px 16px 60px; } }
 .dx-h { color: #e8e8f0; font-weight: 700; line-height: 1.25; }
 .dx-h1 { font-size: 30px; margin: 0 0 20px; }
 .dx-h2 { font-size: 22px; margin: 40px 0 14px; padding-bottom: 8px; border-bottom: 1px solid #2a2a3a;
