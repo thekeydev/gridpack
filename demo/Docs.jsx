@@ -475,7 +475,7 @@ export default function Docs({ source = guideMd, onOpenPlayground, onNavigateSec
 
 	return <div className="dx-root">
 		<style>{DX_CSS}</style>
-		<Grid layout="tc ?wh | 0 #" sm="tc ?wh | 180 #" lg="tc ?wh | 240 #"
+		<Grid layout="tc ?wh | 0 #" sm="tc ?wh | 180 #" lg="tc ?wh | 260 #"
 			breaks={{ sm: 641, lg: 992 }} className="dx-grid">
 			<nav className="dx-toc" ref={navRef}>
 				<div className="dx-toc-hd">Guide</div>

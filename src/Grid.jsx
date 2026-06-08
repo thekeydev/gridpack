@@ -450,9 +450,12 @@ let MultiColumnMeasurer = ({ area, spanStart, spanCount, containerRef, gapH, fil
 			let trackWidths = colWidths.slice(spanStart, spanStart + spanCount);
 			let minTrack = Math.min(...trackWidths);
 
+			let padLeft = parseInt(areaEl.style.paddingLeft);
+			let padRight = parseInt(areaEl.style.paddingRight);
+			areaEl.style.paddingLeft;
 			areaEl.style.columnCount = spanCount;
-			areaEl.style.columnGap = gap + "px";
-			areaEl.style.columnWidth = minTrack + "px";
+			areaEl.style.columnGap = (padLeft + gap + padRight) + "px";
+			areaEl.style.columnWidth = "0px";//minTrack + "px";
 			if (fill) areaEl.style.columnFill = fill;
 		};
 

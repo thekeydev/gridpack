@@ -1265,14 +1265,7 @@ let toGridStyle = (parsed) => {
 		style.flexDirection = base;
 		if (parsed.flags.flexWrap) style.flexWrap = "wrap";
 
-		// in flex mode, colSizes segment = per-item basis (handled in toAreaStyle)
-		// width/height
-		if (growFrCols || explicitFrCols || parsed.flags.fullWidth || autoRepeatCols)
-			style.width = "100%";
-		else style.width = "fit-content";
-		if (growFrRows || explicitFrRows || parsed.flags.fullHeight || autoRepeatRows)
-			style.height = "100%";
-		else style.height = "fit-content";
+		// in flex mode, colSizes segment = per-item basis (handled in toAreaStyle) width/height
 	} else {
 		// --- grid container ---
 		style.display = "grid";
@@ -1289,15 +1282,18 @@ let toGridStyle = (parsed) => {
 		style.gridTemplateRows = parsed.rowRepeat
 			? buildRepeatSizes(parsed.rowRepeat, parsed.rowRepeatSizes)
 			: parsed.rowSizes.join(" ");
-		if (growFrCols || explicitFrCols || parsed.flags.fullWidth || autoRepeatCols) style.width = "100%"; else style.width = "fit-content";
-		if (growFrRows || explicitFrRows || parsed.flags.fullHeight || autoRepeatRows) style.height = "100%"; else style.height = "fit-content";
 	}
 
-	if (parsed.gapH != null) {
-		style.gap = parsed.gapH === parsed.gapV
-			? parsed.gapH + "px"
-			: parsed.gapH + "px " + parsed.gapV + "px";
-	}
+	if (growFrCols || explicitFrCols || parsed.flags.fullWidth || autoRepeatCols)
+		style.width = "100%";
+	else style.width = "fit-content";
+	if (growFrRows || explicitFrRows || parsed.flags.fullHeight || autoRepeatRows)
+		style.height = "100%";
+	else style.height = "fit-content";
+
+	if (parsed.gapH!=null)
+		style.gap = parsed.gapH === parsed.gapV ?
+			parsed.gapH + "px" : parsed.gapH + "px " + parsed.gapV + "px";
 
 	if (parsed.flags.justifyContent) style.justifyContent = parsed.flags.justifyContent;
 	if (parsed.flags.alignContent) style.alignContent = parsed.flags.alignContent;
